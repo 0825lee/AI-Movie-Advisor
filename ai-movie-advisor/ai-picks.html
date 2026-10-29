@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+
+<html class="bg-[#EEEFF1]" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI选片 · 幕间</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.js"></script>
+<style>
+    html {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+    body {
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    ::selection {
+      background: rgba(166, 75, 50, 0.18);
+    }
+    button, a, textarea {
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="min-w-[1440px] bg-[#EEEFF1] text-[#202023]">
+<div class="mx-auto min-h-screen w-[1440px] bg-white">
+<header class="border-b border-[#E9E9EC] bg-white">
+<div class="flex h-[76px] w-[1440px] items-center px-16">
+<a aria-label="幕间首页" class="flex items-center gap-3" href="library.html">
+<span class="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#A64B32] text-white">
+<iconify-icon aria-hidden="true" height="20" icon="ph:film-strip-fill" width="20"></iconify-icon>
+</span>
+<span class="flex items-baseline gap-2.5">
+<span class="text-[19px] font-semibold tracking-[0.04em] text-[#1D1D20]">9万天</span>
+<span class="text-[10px] font-medium tracking-[0.14em] text-[#96969E]">AI 电影推荐助手</span>
+</span>
+</a>
+<nav aria-label="主导航" class="ml-16 flex h-full items-center gap-9">
+<a class="flex h-full items-center text-[14px] font-medium text-[#72727B] transition-colors hover:text-[#202023]" href="library.html">
+            我的片库
+          </a>
+<a aria-current="page" class="relative flex h-full items-center text-[14px] font-medium text-[#A64B32]" href="ai-picks.html">
+            AI选片
+            <span class="absolute inset-x-0 bottom-0 h-[2px] bg-[#A64B32]"></span>
+</a>
+</nav>
+</div>
+</header>
+<main class="w-[1440px] bg-white">
+<section class="px-16 pb-9 pt-12">
+<div class="flex items-end justify-between">
+<div>
+<div class="mb-3 flex items-center gap-2 text-[10.5px] font-semibold tracking-[0.18em] text-[#A64B32]">
+<span class="h-px w-5 bg-[#A64B32]"></span>
+              AI 选片
+            </div>
+<h1 class="text-[40px] font-semibold leading-[1.15] tracking-[-0.03em] text-[#1D1D20]">想看什么</h1>
+<p class="mt-3 text-[14px] leading-6 text-[#74747D]">从你的观影画像出发，或直接说出此刻的观影需求。</p>
+</div>
+</div>
+<div class="mt-8 flex items-center justify-between">
+<div aria-label="推荐模式" class="inline-flex rounded-xl bg-[#F3F3F5] p-1" role="tablist">
+<button aria-controls="profile-mode" aria-selected="false" class="mode-tab rounded-lg px-5 py-2.5 text-[13px] font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/25 text-[#77777F]" id="mode-profile-tab" role="tab" type="button">
+              按画像推荐
+            </button>
+<button aria-controls="demand-mode" aria-selected="true" class="mode-tab rounded-lg px-5 py-2.5 text-[13px] font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/25 bg-white text-[#202023] shadow-[0_1px_2px_rgba(24,24,27,0.07)]" id="mode-demand-tab" role="tab" type="button">
+              按需求推荐
+            </button>
+</div>
+<p class="flex items-center gap-1.5 text-[10.5px] text-[#9A9AA2]">
+<iconify-icon aria-hidden="true" height="13" icon="ph:shield-check" width="13"></iconify-icon>
+            推荐结果自动排除已看影片，并记住你不感兴趣的影片
+          </p>
+</div>
+</section>
+<section class="bg-[#F7F7F8] px-16 pb-16 pt-10">
+<!-- 按画像推荐 -->
+<div aria-labelledby="mode-profile-tab" class="hidden" id="profile-mode" role="tabpanel">
+<div class="flex items-center gap-8 rounded-2xl border border-[#E8E8EB] bg-white p-7 shadow-[0_1px_2px_rgba(24,24,27,0.035)]">
+<div class="min-w-0 flex-1">
+<div class="flex items-center gap-2 text-[10px] font-semibold tracking-[0.15em] text-[#A64B32]">
+<iconify-icon aria-hidden="true" height="14" icon="ph:fingerprint" width="14"></iconify-icon>
+                画像摘要
+              </div>
+<h2 class="mt-2.5 text-[21px] font-semibold tracking-[-0.015em] text-[#242427]">偏爱人物驱动、情绪余韵长的作者电影</h2>
+<p class="mt-2 text-[11.5px] text-[#8E8E96]">基于看过的影片与个人评分生成</p>
+<div class="mt-4 flex flex-wrap items-center gap-2">
+<span class="rounded-md bg-[#A64B32]/10 px-2.5 py-1.5 text-[10.5px] font-medium text-[#A64B32]">剧情 76%</span>
+<span class="rounded-md bg-[#F4F4F5] px-2.5 py-1.5 text-[10.5px] text-[#6E6E77]">悬疑 58%</span>
+<span class="rounded-md bg-[#F4F4F5] px-2.5 py-1.5 text-[10.5px] text-[#6E6E77]">90年代—10年代</span>
+<span class="rounded-md bg-[#F4F4F5] px-2.5 py-1.5 text-[10.5px] text-[#6E6E77]">华语 · 日本</span>
+<span class="rounded-md bg-[#F4F4F5] px-2.5 py-1.5 text-[10.5px] text-[#6E6E77]">王家卫 / 是枝裕和</span>
+</div>
+</div>
+<div class="h-[108px] w-px shrink-0 bg-[#ECECEF]"></div>
+<div class="w-[196px] shrink-0 pl-1">
+<button class="flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[#A64B32] px-4 text-[13px] font-medium text-white shadow-[0_1px_2px_rgba(100,38,22,0.14)] transition-colors hover:bg-[#913F29] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/30 focus-visible:ring-offset-2" id="start-profile-recommend" type="button">
+<iconify-icon aria-hidden="true" height="17" icon="ph:sparkle" width="17"></iconify-icon>
+                开始推荐
+              </button>
+<p class="mt-2.5 text-center text-[10.5px] leading-[1.7] text-[#9A9AA2]">每次生成 3 部<br/>结果可换一批</p>
+</div>
+</div>
+<div class="mt-8">
+<div class="flex items-end justify-between">
+<div>
+<div class="flex items-center gap-2 text-[10px] font-semibold tracking-[0.15em] text-[#A64B32]">
+<span class="h-px w-4 bg-[#A64B32]"></span>
+                  根据画像推荐
+                </div>
+<h2 class="mt-2 text-[22px] font-semibold tracking-[-0.015em] text-[#242427]">为你挑选的 3 部</h2>
+</div>
+</div>
+<div aria-live="polite" class="mt-5 grid grid-cols-3 items-stretch gap-5" id="profile-results"><article class="flex h-full min-h-[430px] flex-col rounded-2xl border border-[#E8E8EB] bg-white shadow-[0_1px_2px_rgba(24,24,27,0.035)] transition-shadow hover:shadow-[0_8px_28px_rgba(24,24,27,0.06)]"><div class="flex items-center justify-between px-6 pt-5"><span class="font-mono text-[10px] tracking-[0.2em] text-[#B0B0B8]">01 / 03</span><span class="inline-flex items-center gap-1 rounded-full bg-[#A64B32]/10 px-2.5 py-1 text-[10px] font-medium text-[#A64B32]"><iconify-icon aria-hidden="true" height="11" icon="ph:sparkle-fill" width="11"></iconify-icon>画像匹配 95%</span></div><div class="px-6 pt-4"><div class="flex flex-wrap items-center gap-1.5"><span class="rounded-md border border-[#EDEDEF] bg-[#FAFAFB] px-2 py-1 text-[10px] text-[#77777F]">爱情</span><span class="rounded-md border border-[#EDEDEF] bg-[#FAFAFB] px-2 py-1 text-[10px] text-[#77777F]">剧情</span></div><h3 class="mt-4 font-serif text-[23px] font-semibold leading-[1.35] tracking-[-0.01em] text-[#242427]">花束般的恋爱</h3><p class="mt-1.5 flex items-center gap-2 text-[11.5px] text-[#8E8E96]"><span>2021</span><span class="text-[#C4C4CA]">/</span><span>日本</span></p></div><div class="mx-6 mt-5 h-px bg-[#EFEFF1]"></div><div class="flex flex-1 flex-col px-6 pt-4"><div class="space-y-2.5"><div class="flex gap-3 text-[12px] leading-5"><span class="w-8 shrink-0 text-[#A0A0A8]">导演</span><span class="text-[#4B4B52]">土井裕泰</span></div><div class="flex gap-3 text-[12px] leading-5"><span class="w-8 shrink-0 text-[#A0A0A8]">主演</span><span class="text-[#4B4B52]">菅田将晖 / 有村架纯</span></div></div><p class="mt-4 text-[12.5px] leading-[1.85] text-[#63636B]">错过末班车的两个年轻人因共同的电影、音乐与漫画爱好走到一起，在东京开始一段从校园到社会的恋爱。</p></div><div class="mt-6 flex items-center gap-2 border-t border-[#EFEFF1] px-6 py-4"><span class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#A64B32]/15 bg-[#F8EFEC] text-[11.5px] font-medium text-[#A64B32]"><iconify-icon aria-hidden="true" height="14" icon="ph:check-circle-fill" width="14"></iconify-icon>已在想看</span><button class="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#86868F] transition-colors hover:border-[#C9C9CF] hover:bg-[#F8F8F9] hover:text-[#4D4D54] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-not-interest="flower" data-source="profile" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:thumbs-down" width="13"></iconify-icon>不感兴趣</button></div></article><article class="flex h-full min-h-[430px] flex-col rounded-2xl border border-[#E8E8EB] bg-white shadow-[0_1px_2px_rgba(24,24,27,0.035)] transition-shadow hover:shadow-[0_8px_28px_rgba(24,24,27,0.06)]"><div class="flex items-center justify-between px-6 pt-5"><span class="font-mono text-[10px] tracking-[0.2em] text-[#B0B0B8]">02 / 03</span><span class="inline-flex items-center gap-1 rounded-full bg-[#A64B32]/10 px-2.5 py-1 text-[10px] font-medium text-[#A64B32]"><iconify-icon aria-hidden="true" height="11" icon="ph:sparkle-fill" width="11"></iconify-icon>画像匹配 93%</span></div><div class="px-6 pt-4"><div class="flex flex-wrap items-center gap-1.5"><span class="rounded-md border border-[#EDEDEF] bg-[#FAFAFB] px-2 py-1 text-[10px] text-[#77777F]">剧情</span><span class="rounded-md border border-[#EDEDEF] bg-[#FAFAFB] px-2 py-1 text-[10px] text-[#77777F]">悬疑</span></div><h3 class="mt-4 font-serif text-[23px] font-semibold leading-[1.35] tracking-[-0.01em] text-[#242427]">坠落的审判</h3><p class="mt-1.5 flex items-center gap-2 text-[11.5px] text-[#8E8E96]"><span>2023</span><span class="text-[#C4C4CA]">/</span><span>法国</span></p></div><div class="mx-6 mt-5 h-px bg-[#EFEFF1]"></div><div class="flex flex-1 flex-col px-6 pt-4"><div class="space-y-2.5"><div class="flex gap-3 text-[12px] leading-5"><span class="w-8 shrink-0 text-[#A0A0A8]">导演</span><span class="text-[#4B4B52]">茹斯汀·特里叶</span></div><div class="flex gap-3 text-[12px] leading-5"><span class="w-8 shrink-0 text-[#A0A0A8]">主演</span><span class="text-[#4B4B52]">桑德拉·惠勒 / 斯万·阿劳德</span></div></div><p class="mt-4 text-[12.5px] leading-[1.85] text-[#63636B]">一位作家被指控谋杀丈夫，失明的儿子成为唯一证人。法庭审理逐渐揭开婚姻内部难以言明的权力与疏离。</p></div><div class="mt-6 flex items-center gap-2 border-t border-[#EFEFF1] px-6 py-4"><button class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#A64B32] text-[11.5px] font-medium text-white transition-colors hover:bg-[#913F29] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/25" data-add-want="anatomy" data-source="profile" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:plus" width="13"></iconify-icon>加入想看</button><button class="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#86868F] transition-colors hover:border-[#C9C9CF] hover:bg-[#F8F8F9] hover:text-[#4D4D54] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-not-interest="anatomy" data-source="profile" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:thumbs-down" width="13"></iconify-icon>不感兴趣</button></div></article><article class="flex h-full min-h-[430px] flex-col rounded-2xl border border-[#E8E8EB] bg-white shadow-[0_1px_2px_rgba(24,24,27,0.035)] transition-shadow hover:shadow-[0_8px_28px_rgba(24,24,27,0.06)]"><div class="flex items-center justify-between px-6 pt-5"><span class="font-mono text-[10px] tracking-[0.2em] text-[#B0B0B8]">03 / 03</span><span class="inline-flex items-center gap-1 rounded-full bg-[#A64B32]/10 px-2.5 py-1 text-[10px] font-medium text-[#A64B32]"><iconify-icon aria-hidden="true" height="11" icon="ph:sparkle-fill" width="11"></iconify-icon>画像匹配 91%</span></div><div class="px-6 pt-4"><div class="flex flex-wrap items-center gap-1.5"><span class="rounded-md border border-[#EDEDEF] bg-[#FAFAFB] px-2 py-1 text-[10px] text-[#77777F]">剧情</span><span class="rounded-md border border-[#EDEDEF] bg-[#FAFAFB] px-2 py-1 text-[10px] text-[#77777F]">家庭</span></div><h3 class="mt-4 font-serif text-[23px] font-semibold leading-[1.35] tracking-[-0.01em] text-[#242427]">怪物</h3><p class="mt-1.5 flex items-center gap-2 text-[11.5px] text-[#8E8E96]"><span>2023</span><span class="text-[#C4C4CA]">/</span><span>日本</span></p></div><div class="mx-6 mt-5 h-px bg-[#EFEFF1]"></div><div class="flex flex-1 flex-col px-6 pt-4"><div class="space-y-2.5"><div class="flex gap-3 text-[12px] leading-5"><span class="w-8 shrink-0 text-[#A0A0A8]">导演</span><span class="text-[#4B4B52]">是枝裕和</span></div><div class="flex gap-3 text-[12px] leading-5"><span class="w-8 shrink-0 text-[#A0A0A8]">主演</span><span class="text-[#4B4B52]">安藤樱 / 永山瑛太</span></div></div><p class="mt-4 text-[12.5px] leading-[1.85] text-[#63636B]">单亲母亲发现儿子行为异常，学校却轻描淡写。随着多方视角展开，一起校园冲突背后的真相变得模糊。</p></div><div class="mt-6 flex items-center gap-2 border-t border-[#EFEFF1] px-6 py-4"><button class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#A64B32] text-[11.5px] font-medium text-white transition-colors hover:bg-[#913F29] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/25" data-add-want="monster" data-source="profile" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:plus" width="13"></iconify-icon>加入想看</button><button class="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#86868F] transition-colors hover:border-[#C9C9CF] hover:bg-[#F8F8F9] hover:text-[#4D4D54] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-not-interest="monster" data-source="profile" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:thumbs-down" width="13"></iconify-icon>不感兴趣</button></div></article></div>
+<div class="mt-7 flex justify-center">
+<button class="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#DCDCE1] bg-white px-5 text-[12.5px] font-medium text-[#5C5C64] transition-colors hover:border-[#BEBEC5] hover:bg-[#FAFAFA] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" id="refresh-profile" type="button">
+<iconify-icon aria-hidden="true" height="15" icon="ph:arrows-clockwise" width="15"></iconify-icon>
+                换一批
+              </button>
+</div>
+</div>
+</div>
+<!-- 按需求推荐 -->
+<div aria-labelledby="mode-demand-tab" class="" id="demand-mode" role="tabpanel">
+<div class="rounded-2xl border border-[#E8E8EB] bg-white p-7 shadow-[0_1px_2px_rgba(24,24,27,0.035)]">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2 text-[10px] font-semibold tracking-[0.15em] text-[#A64B32]">
+<iconify-icon aria-hidden="true" height="14" icon="ph:chat-teardrop-text" width="14"></iconify-icon>
+                  描述观影需求
+                </div>
+<h2 class="mt-2.5 text-[21px] font-semibold tracking-[-0.015em] text-[#242427]">描述你此刻想看的电影</h2>
+<p class="mt-2 text-[11.5px] text-[#8E8E96]">可以包含年代、国家或地区、类型与观影氛围，本轮只依据这段描述推荐。</p>
+</div>
+</div>
+<form class="mt-5" id="demand-form">
+<label class="sr-only" for="demand-input">描述观影需求</label>
+<textarea class="h-[116px] w-full resize-none rounded-xl border border-[#DEDEE3] bg-[#FCFCFD] px-4 py-3.5 text-[13.5px] leading-6 text-[#2C2C31] placeholder:text-[#ABABB3] focus:border-[#A64B32] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#A64B32]/10" id="demand-input" placeholder="例如：想看一部2010年以后的日本悬疑电影。" rows="4"></textarea>
+<p class="mt-2 hidden text-[11.5px] text-[#A64B32]" id="demand-error"></p>
+<div class="mt-4 flex items-end justify-between gap-6">
+<div>
+<p class="text-[10.5px] text-[#A0A0A8]">试试这些描述</p>
+<div class="mt-2 flex flex-wrap gap-2">
+<button class="rounded-full border border-[#E4E4E8] bg-white px-3 py-1.5 text-[11px] text-[#72727B] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32]" data-prompt="想看一部2010年以后的日本悬疑电影。" type="button">2010 年后的日本悬疑</button>
+<button class="rounded-full border border-[#E4E4E8] bg-white px-3 py-1.5 text-[11px] text-[#72727B] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32]" data-prompt="想看一部节奏慢一点、余味长的电影。" type="button">节奏慢、余味长</button>
+<button class="rounded-full border border-[#E4E4E8] bg-white px-3 py-1.5 text-[11px] text-[#72727B] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32]" data-prompt="想看一部适合周五晚上的华语片。" type="button">周五晚上的华语片</button>
+</div>
+</div>
+<button class="inline-flex h-11 w-[144px] shrink-0 items-center justify-center gap-2 rounded-[10px] bg-[#A64B32] px-5 text-[13px] font-medium text-white shadow-[0_1px_2px_rgba(100,38,22,0.14)] transition-colors hover:bg-[#913F29] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/30 focus-visible:ring-offset-2" type="submit">
+<iconify-icon aria-hidden="true" height="16" icon="ph:sparkle" width="16"></iconify-icon>
+                  推荐电影
+                </button>
+</div>
+</form>
+</div>
+<div class="mt-8 flex min-h-[190px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#DDDDE2] bg-[#FAFAFB] px-8 text-center" id="demand-empty">
+<span class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#A64B32] shadow-[0_1px_3px_rgba(24,24,27,0.06)]">
+<iconify-icon aria-hidden="true" height="21" icon="ph:film-script" width="21"></iconify-icon>
+</span>
+<p class="mt-3 text-[13px] font-medium text-[#56565E]">推荐结果会出现在这里</p>
+<p class="mt-1.5 text-[11px] text-[#A0A0A8]">每次返回 3 部，均可加入想看或标记不感兴趣</p>
+</div>
+<div class="mt-8 hidden" id="demand-results-wrap">
+<div class="flex items-end justify-between">
+<div>
+<div class="flex items-center gap-2 text-[10px] font-semibold tracking-[0.15em] text-[#A64B32]">
+<span class="h-px w-4 bg-[#A64B32]"></span>
+                  按描述匹配
+                </div>
+<h2 class="mt-2 text-[22px] font-semibold tracking-[-0.015em] text-[#242427]">根据你的描述找到 3 部</h2>
+<p class="mt-1.5 text-[11px] text-[#92929A]">描述：<span class="text-[#5E5E66]" id="demand-query-echo"></span></p>
+</div>
+<p class="pb-1 text-[10.5px] text-[#95959D]" id="demand-result-note">已排除 80 部已看影片</p>
+</div>
+<div aria-live="polite" class="mt-5 grid grid-cols-3 items-stretch gap-5" id="demand-results"></div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<div aria-live="polite" class="pointer-events-none fixed bottom-8 left-1/2 z-[80] hidden -translate-x-1/2 translate-y-3 items-center gap-2.5 rounded-xl bg-[#252529] px-4 py-3 text-[12px] font-medium text-white opacity-0 shadow-[0_12px_36px_rgba(20,20,23,0.24)] transition-all duration-200" id="toast" role="status">
+<iconify-icon aria-hidden="true" class="text-[#DCA28E]" height="16" icon="ph:check-circle-fill" width="16"></iconify-icon>
+<span data-toast-text=""></span>
+</div>
+<script>
+    const seenTitles = new Set([
+      '霸王别姬', '肖申克的救赎', '重庆森林', '花样年华', '一一', '牯岭街少年杀人事件', '悲情城市', '饮食男女', '卧虎藏龙', '阳光灿烂的日子',
+      '活着', '大红灯笼高高挂', '春光乍泄', '堕落天使', '东邪西毒', '阿飞正传', '英雄本色', '无间道', '色，戒', '刺客聂隐娘',
+      '路边野餐', '地球最后的夜晚', '地久天长', '白日焰火', '烈日灼心', '心迷宫', '暴裂无声', '我不是药神', '无名之辈', '少年的你',
+      '送你一朵小红花', '你好，李焕英', '消失的她', '宇宙探索编辑部', '沙丘', '沙丘2', '星际穿越', '盗梦空间', '银翼杀手2049', '降临',
+      '机械姬', '月球', '2001太空漫游', '潜行者', '飞向太空', '七武士', '罗生门', '东京物语', '东京奏鸣曲', '情书',
+      '被嫌弃的松子的一生', '小偷家族', '海街日记', '无人知晓', '菊次郎的夏天', '你的名字', '千与千寻', '龙猫', '红辣椒', '攻壳机动队',
+      '未麻的部屋', '教父', '教父2', '现代启示录', '出租车司机', '银翼杀手', '穆赫兰道', '记忆碎片', '禁闭岛', '搏击俱乐部',
+      '七宗罪', '十二怒汉', '控方证人', '后窗', '迷魂记', '日落大道', '爱乐之城', '爆裂鼓手', '海边的曼彻斯特', '罗马'
+    ]);
+
+    const initialWantTitles = [
+      '海上钢琴师', '驾驶我的车', '花束般的恋爱', '记忆', '奥本海默', '步履不停',
+      '燃烧', '模仿游戏', '她', '十二宫', '巴斯特·斯克鲁格斯的歌谣', '冷血'
+    ];
+
+    const wantSet = new Set(initialWantTitles);
+    const uninterested = new Set();
+
+    const candidates = [
+      {
+        id: 'flower', title: '花束般的恋爱', year: 2021, region: '日本', director: '土井裕泰',
+        cast: '菅田将晖 / 有村架纯', genres: ['爱情', '剧情'], tags: ['文艺', '都市', '恋爱'], match: 95,
+        synopsis: '错过末班车的两个年轻人因共同的电影、音乐与漫画爱好走到一起，在东京开始一段从校园到社会的恋爱。'
+      },
+      {
+        id: 'anatomy', title: '坠落的审判', year: 2023, region: '法国', director: '茹斯汀·特里叶',
+        cast: '桑德拉·惠勒 / 斯万·阿劳德', genres: ['剧情', '悬疑'], tags: ['庭审', '婚姻', '余味'], match: 93,
+        synopsis: '一位作家被指控谋杀丈夫，失明的儿子成为唯一证人。法庭审理逐渐揭开婚姻内部难以言明的权力与疏离。'
+      },
+      {
+        id: 'monster', title: '怪物', year: 2023, region: '日本', director: '是枝裕和',
+        cast: '安藤樱 / 永山瑛太', genres: ['剧情', '家庭'], tags: ['多视角', '克制', '成长'], match: 91,
+        synopsis: '单亲母亲发现儿子行为异常，学校却轻描淡写。随着多方视角展开，一起校园冲突背后的真相变得模糊。'
+      },
+      {
+        id: 'drive', title: '驾驶我的车', year: 2021, region: '日本', director: '滨口龙介',
+        cast: '西岛秀俊 / 三浦透子', genres: ['剧情'], tags: ['慢节奏', '克制', '余味', '文学'], match: 90,
+        synopsis: '舞台剧导演在妻子去世后，执导契诃夫《万尼亚舅舅》。与沉默的年轻司机相处，让他重新面对未说出口的愧疚。'
+      },
+      {
+        id: 'perfect', title: '完美的日子', year: 2023, region: '日本', director: '维姆·文德斯',
+        cast: '役所广司 / 柄本时生', genres: ['剧情'], tags: ['慢节奏', '治愈', '日常'], match: 89,
+        synopsis: '东京公厕清洁工平山过着规律而安静的生活：工作、听磁带、拍树影。一系列短暂相遇让日常泛起细腻的涟漪。'
+      },
+      {
+        id: 'river', title: '河边的错误', year: 2023, region: '中国', director: '魏书钧',
+        cast: '朱一龙 / 曾美慧孜', genres: ['犯罪', '悬疑'], tags: ['荒诞', '年代', '压抑'], match: 88,
+        synopsis: '小镇河边发现一具尸体，刑警队长在调查中逐渐陷入荒诞而压抑的现实。案件与他的精神危机彼此缠绕。'
+      },
+      {
+        id: 'confession', title: '告白', year: 2010, region: '日本', director: '中岛哲也',
+        cast: '松隆子 / 冈田将生', genres: ['悬疑', '剧情'], tags: ['复仇', '校园', '反转'], match: 87,
+        synopsis: '女教师平静地向学生宣布女儿的死讯，并在课堂上指出凶手就在其中。复仇与真相在冷冽的叙述中层层反转。'
+      },
+      {
+        id: 'anger', title: '怒', year: 2016, region: '日本', director: '李相日',
+        cast: '渡边谦 / 森山未来', genres: ['悬疑', '剧情'], tags: ['信任', '群像', '犯罪'], match: 86,
+        synopsis: '东京与冲绳两地发生命案，一位父亲在寻找女儿的过程中，逐渐发现亲密关系里的信任早已出现裂痕。'
+      },
+      {
+        id: 'third', title: '第三度嫌疑人', year: 2017, region: '日本', director: '是枝裕和',
+        cast: '福山雅治 / 役所广司', genres: ['悬疑', '剧情'], tags: ['庭审', '真相', '克制'], match: 86,
+        synopsis: '律师为重审一桩谋杀案接近被告，对方却不断改变供词。真相在一次次会面中被留置在灰色地带。'
+      },
+      {
+        id: 'fool', title: '愚行录', year: 2016, region: '日本', director: '石川庆',
+        cast: '妻夫木聪 / 满岛光', genres: ['悬疑', '犯罪'], tags: ['家庭', '阶层', '冷峻'], match: 84,
+        synopsis: '周刊记者调查一起灭门案，在采访中重新触碰自己家庭的旧伤。体面的表象下，偏见与冷漠缓慢显形。'
+      },
+      {
+        id: 'burning', title: '燃烧', year: 2018, region: '韩国', director: '李沧东',
+        cast: '刘亚仁 / 史蒂文·元', genres: ['悬疑', '剧情'], tags: ['阶层', '欲望', '余味'], match: 90,
+        synopsis: '青年钟秀偶遇童年邻居惠美，又结识她神秘的朋友本。一场关于存在、欲望与阶层的猜疑，最终走向失控。'
+      },
+      {
+        id: 'seoul', title: '首尔之春', year: 2023, region: '韩国', director: '金成洙',
+        cast: '黄政民 / 郑雨盛', genres: ['犯罪', '历史'], tags: ['政治', '紧张', '群像'], match: 83,
+        synopsis: '1979年末的首尔，一场权力更迭在数小时内展开。守卫部队与权力核心之间的抉择，改变了国家的走向。'
+      },
+      {
+        id: 'decision', title: '分手的决心', year: 2022, region: '韩国', director: '朴赞郁',
+        cast: '汤唯 / 朴海日', genres: ['悬疑', '爱情'], tags: ['罪案', '克制', '余味'], match: 88,
+        synopsis: '刑警调查一桩坠崖案时，对死者妻子产生难以言明的吸引。案件逐渐结束，两人的执念却刚刚开始。'
+      },
+      {
+        id: 'fallen-leaves', title: '枯叶', year: 2023, region: '芬兰', director: '阿基·考里斯马基',
+        cast: '阿尔玛·波斯蒂 / 尤西·瓦塔宁', genres: ['剧情', '爱情'], tags: ['慢节奏', '温柔', '孤独', '余味'], match: 85,
+        synopsis: '两位孤独的中年人在赫尔辛基的夜晚相遇，试着靠近彼此。生活依旧艰难，但一点点温暖已足够抵御寒冷。'
+      },
+      {
+        id: 'good', title: '好东西', year: 2024, region: '中国', director: '邵艺辉',
+        cast: '宋佳 / 钟楚曦', genres: ['剧情', '喜剧'], tags: ['都市', '女性', '轻松'], match: 84,
+        synopsis: '两个性格迥异的女性在上海相互扶持，面对工作、亲密关系与自我认同的难题，重新定义“好东西”。'
+      },
+      {
+        id: 'white-tower', title: '白塔之光', year: 2023, region: '中国', director: '张律',
+        cast: '辛柏青 / 黄尧', genres: ['剧情', '家庭'], tags: ['城市', '文艺', '孤独'], match: 82,
+        synopsis: '中年男人在北京与旧日关系重逢，也一次次走向白塔之外。父辈的缺席与城市的旧影，缓慢汇入他的生活。'
+      },
+      {
+        id: 'unspoken', title: '不虚此行', year: 2023, region: '中国', director: '刘伽茵',
+        cast: '胡歌 / 吴磊', genres: ['剧情'], tags: ['写作', '治愈', '慢节奏'], match: 81,
+        synopsis: '失意的编剧转行为陌生人撰写悼词，在倾听一个个普通人的故事时，也重新找到自己与生活相处的方式。'
+      },
+      {
+        id: 'oppenheimer', title: '奥本海默', year: 2023, region: '美国', director: '克里斯托弗·诺兰',
+        cast: '基里安·墨菲 / 艾米莉·布朗特', genres: ['传记', '历史', '剧情'], tags: ['科学', '道德', '群像'], match: 92,
+        synopsis: '理论物理学家奥本海默被推上时代前台，主持曼哈顿计划。科学雄心、道德重负与政治审查交织成他的一生。'
+      },
+      {
+        id: 'tar', title: '塔尔', year: 2022, region: '美国', director: '托德·菲尔德',
+        cast: '凯特·布兰切特 / 诺米·梅兰特', genres: ['剧情', '音乐'], tags: ['权力', '艺术', '冷峻'], match: 86,
+        synopsis: '世界知名指挥家身处权力顶端，一桩旧日争议逐渐发酵，迫使她审视自己的天才、欲望与坠落。'
+      },
+      {
+        id: 'zone', title: '利益区域', year: 2023, region: '英国', director: '乔纳森·格雷泽',
+        cast: '克里斯蒂安·富里道尔 / 桑德拉·惠勒', genres: ['历史', '战争'], tags: ['克制', '声音', '历史'], match: 85,
+        synopsis: '奥斯维辛集中营旁的一家人经营着理想花园。日常的安稳与墙外的暴行并置，形成令人不安的观看经验。'
+      },
+      {
+        id: 'substance', title: '某种物质', year: 2024, region: '美国', director: '科拉莉·法尔雅',
+        cast: '黛米·摩尔 / 玛格丽特·库里', genres: ['恐怖', '科幻'], tags: ['身体', '欲望', '激进'], match: 80,
+        synopsis: '年过半百的健身节目主持人被行业抛弃，选择使用一种能创造更年轻自我的神秘药物，代价却远超想象。'
+      },
+      {
+        id: 'memory', title: '记忆', year: 2021, region: '哥伦比亚', director: '阿彼察邦·韦拉斯哈古',
+        cast: '蒂尔达·斯文顿 / 艾格尼丝·布雷克', genres: ['剧情', '奇幻'], tags: ['慢节奏', '感官', '余味', '梦境'], match: 85,
+        synopsis: '在哥伦比亚旅行的苏格兰女子被神秘巨响困扰。她循着声音深入记忆与历史，展开一场缓慢的感官旅程。'
+      },
+      {
+        id: 'marriage', title: '婚姻故事', year: 2019, region: '美国', director: '诺亚·鲍姆巴赫',
+        cast: '亚当·德赖弗 / 斯嘉丽·约翰逊', genres: ['剧情', '爱情'], tags: ['婚姻', '表演', '余味'], match: 88,
+        synopsis: '一对舞台剧夫妻决定和平分手，却在律师、孩子与旧日情绪之间被推向彼此最锋利的地方。'
+      },
+      {
+        id: 'future-crimes', title: '未来罪行', year: 2022, region: '加拿大', director: '大卫·柯南伯格',
+        cast: '维果·莫腾森 / 蕾雅·赛杜', genres: ['科幻', '惊悚'], tags: ['身体', '艺术', '冷峻'], match: 79,
+        synopsis: '在不远的未来，人类开始适应身体变异。一对表演者将器官改造搬上舞台，也卷入一场关于进化的阴谋。'
+      },
+      {
+        id: 'poor-things', title: '可怜的东西', year: 2023, region: '美国', director: '欧格斯·兰斯莫斯',
+        cast: '艾玛·斯通 / 马克·鲁法洛', genres: ['科幻', '奇幻'], tags: ['女性', '怪诞', '成长'], match: 80,
+        synopsis: '被科学家复活的年轻女子带着未完成的心智出走世界，在欲望、规则与自由之间重新学习成为一个完整的人。'
+      }
+    ];
+
+    let profileIds = [];
+    let demandIds = [];
+    let lastDemandQuery = '';
+    let profileOffset = 0;
+    let currentMode = 'profile';
+    let toastTimer = null;
+
+    const profileResultsEl = document.getElementById('profile-results');
+    const demandResultsEl = document.getElementById('demand-results');
+    const demandInput = document.getElementById('demand-input');
+    const demandError = document.getElementById('demand-error');
+    const toastEl = document.getElementById('toast');
+    const profileTab = document.getElementById('mode-profile-tab');
+    const demandTab = document.getElementById('mode-demand-tab');
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, function (character) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[character];
+      });
+    }
+
+    function movieById(id) {
+      return candidates.find(function (movie) { return movie.id === id; });
+    }
+
+    function availableCandidates() {
+      return candidates.filter(function (movie) {
+        return !seenTitles.has(movie.title) && !uninterested.has(movie.id);
+      });
+    }
+
+    function pickProfileBatch(excludeIds) {
+      const pool = availableCandidates();
+      if (pool.length === 0) {
+        return [];
+      }
+      const start = profileOffset % pool.length;
+      const ordered = pool.slice(start).concat(pool.slice(0, start));
+      const excluded = excludeIds || [];
+      const fresh = ordered.filter(function (movie) { return !excluded.includes(movie.id); });
+      const chosenPool = fresh.length >= 3 ? fresh : ordered;
+      const chosen = chosenPool.slice(0, 3).map(function (movie) { return movie.id; });
+      profileOffset = (start + 3) % pool.length;
+      return chosen;
+    }
+
+    function matchDemand(movie, query) {
+      const checks = [];
+      if (/日本/.test(query)) {
+        checks.push(movie.region.includes('日本'));
+      }
+      if (/韩国/.test(query)) {
+        checks.push(movie.region.includes('韩国'));
+      }
+      if (/华语|中国|国产|港台/.test(query)) {
+        checks.push(movie.region.includes('中国'));
+      }
+      if (/法国/.test(query)) {
+        checks.push(movie.region.includes('法国'));
+      }
+      if (/美国/.test(query)) {
+        checks.push(movie.region.includes('美国'));
+      }
+      if (/英国/.test(query)) {
+        checks.push(movie.region.includes('英国'));
+      }
+
+      ['悬疑', '犯罪', '科幻', '剧情', '家庭', '历史', '战争', '爱情', '恋爱', '喜剧', '恐怖', '音乐', '奇幻'].forEach(function (genre) {
+        if (query.includes(genre)) {
+          if (genre === '恋爱') {
+            checks.push(movie.genres.includes('爱情') || movie.tags.includes('恋爱'));
+          } else {
+            checks.push(movie.genres.includes(genre));
+          }
+        }
+      });
+
+      const yearMatch = query.match(/(?:19|20)\d{2}/);
+      if (yearMatch) {
+        const targetYear = Number(yearMatch[0]);
+        if (/以后|之后|起/.test(query)) {
+          checks.push(movie.year >= targetYear);
+        } else if (/以前|之前|前/.test(query)) {
+          checks.push(movie.year <= targetYear);
+        }
+      }
+
+      if (/节奏慢|慢一点|缓慢|克制/.test(query)) {
+        checks.push(movie.tags.includes('慢节奏') || movie.tags.includes('克制'));
+      }
+      if (/余味|后劲/.test(query)) {
+        checks.push(movie.tags.includes('余味'));
+      }
+
+      return checks.every(Boolean);
+    }
+
+    function selectDemand(query) {
+      const pool = availableCandidates();
+      const strictMatches = pool.filter(function (movie) { return matchDemand(movie, query); });
+      const chosen = strictMatches.slice(0, 3).map(function (movie) { return movie.id; });
+
+      if (chosen.length < 3) {
+        pool.forEach(function (movie) {
+          if (chosen.length < 3 && !chosen.includes(movie.id)) {
+            chosen.push(movie.id);
+          }
+        });
+      }
+
+      return {
+        ids: chosen,
+        strictCount: strictMatches.length
+      };
+    }
+
+    function renderCard(movie, index, mode, source) {
+      const isInWant = wantSet.has(movie.title);
+      const badge = mode === 'profile'
+        ? '<span class="inline-flex items-center gap-1 rounded-full bg-[#A64B32]/10 px-2.5 py-1 text-[10px] font-medium text-[#A64B32]"><iconify-icon icon="ph:sparkle-fill" width="11" height="11" aria-hidden="true"></iconify-icon>画像匹配 ' + movie.match + '%</span>'
+        : '<span class="inline-flex items-center gap-1 rounded-full bg-[#A64B32]/10 px-2.5 py-1 text-[10px] font-medium text-[#A64B32]"><iconify-icon icon="ph:chat-circle-dots-fill" width="11" height="11" aria-hidden="true"></iconify-icon>符合描述</span>';
+      const genreTags = movie.genres.map(function (genre) {
+        return '<span class="rounded-md border border-[#EDEDEF] bg-[#FAFAFB] px-2 py-1 text-[10px] text-[#77777F]">' + escapeHTML(genre) + '</span>';
+      }).join('');
+      const action = isInWant
+        ? '<span class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#A64B32]/15 bg-[#F8EFEC] text-[11.5px] font-medium text-[#A64B32]"><iconify-icon icon="ph:check-circle-fill" width="14" height="14" aria-hidden="true"></iconify-icon>已在想看</span>'
+        : '<button type="button" data-add-want="' + movie.id + '" data-source="' + source + '" class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#A64B32] text-[11.5px] font-medium text-white transition-colors hover:bg-[#913F29] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/25"><iconify-icon icon="ph:plus" width="13" height="13" aria-hidden="true"></iconify-icon>加入想看</button>';
+
+      return '<article class="flex h-full min-h-[430px] flex-col rounded-2xl border border-[#E8E8EB] bg-white shadow-[0_1px_2px_rgba(24,24,27,0.035)] transition-shadow hover:shadow-[0_8px_28px_rgba(24,24,27,0.06)]">' +
+        '<div class="flex items-center justify-between px-6 pt-5">' +
+          '<span class="font-mono text-[10px] tracking-[0.2em] text-[#B0B0B8]">' + String(index + 1).padStart(2, '0') + ' / 03</span>' +
+          badge +
+        '</div>' +
+        '<div class="px-6 pt-4">' +
+          '<div class="flex flex-wrap items-center gap-1.5">' + genreTags + '</div>' +
+          '<h3 class="mt-4 font-serif text-[23px] font-semibold leading-[1.35] tracking-[-0.01em] text-[#242427]">' + escapeHTML(movie.title) + '</h3>' +
+          '<p class="mt-1.5 flex items-center gap-2 text-[11.5px] text-[#8E8E96]"><span>' + movie.year + '</span><span class="text-[#C4C4CA]">/</span><span>' + escapeHTML(movie.region) + '</span></p>' +
+        '</div>' +
+        '<div class="mx-6 mt-5 h-px bg-[#EFEFF1]"></div>' +
+        '<div class="flex flex-1 flex-col px-6 pt-4">' +
+          '<div class="space-y-2.5">' +
+            '<div class="flex gap-3 text-[12px] leading-5"><span class="w-8 shrink-0 text-[#A0A0A8]">导演</span><span class="text-[#4B4B52]">' + escapeHTML(movie.director) + '</span></div>' +
+            '<div class="flex gap-3 text-[12px] leading-5"><span class="w-8 shrink-0 text-[#A0A0A8]">主演</span><span class="text-[#4B4B52]">' + escapeHTML(movie.cast) + '</span></div>' +
+          '</div>' +
+          '<p class="mt-4 text-[12.5px] leading-[1.85] text-[#63636B]">' + escapeHTML(movie.synopsis) + '</p>' +
+        '</div>' +
+        '<div class="mt-6 flex items-center gap-2 border-t border-[#EFEFF1] px-6 py-4">' +
+          action +
+          '<button type="button" data-not-interest="' + movie.id + '" data-source="' + source + '" class="flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#86868F] transition-colors hover:border-[#C9C9CF] hover:bg-[#F8F8F9] hover:text-[#4D4D54] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20">' +
+            '<iconify-icon icon="ph:thumbs-down" width="13" height="13" aria-hidden="true"></iconify-icon>' +
+            '不感兴趣' +
+          '</button>' +
+        '</div>' +
+      '</article>';
+    }
+
+    function renderResults(container, ids, mode, source) {
+      container.innerHTML = ids.map(function (id, index) {
+        const movie = movieById(id);
+        return movie ? renderCard(movie, index, mode, source) : '';
+      }).join('');
+    }
+
+    function renderAllResults() {
+      renderResults(profileResultsEl, profileIds, 'profile', 'profile');
+      if (demandIds.length > 0) {
+        renderResults(demandResultsEl, demandIds, 'demand', 'demand');
+      }
+    }
+
+    function updateWantCount() {
+      document.getElementById('header-want-count').textContent = String(wantSet.size);
+    }
+
+    function showToast(message) {
+      const textEl = toastEl.querySelector('[data-toast-text]');
+      textEl.textContent = message;
+      window.clearTimeout(toastTimer);
+      toastEl.classList.remove('hidden');
+      toastEl.classList.add('flex');
+      window.requestAnimationFrame(function () {
+        toastEl.classList.remove('translate-y-3', 'opacity-0');
+        toastEl.classList.add('translate-y-0', 'opacity-100');
+      });
+      toastTimer = window.setTimeout(function () {
+        toastEl.classList.remove('translate-y-0', 'opacity-100');
+        toastEl.classList.add('translate-y-3', 'opacity-0');
+        window.setTimeout(function () {
+          toastEl.classList.remove('flex');
+          toastEl.classList.add('hidden');
+        }, 200);
+      }, 2600);
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      const profileActive = mode === 'profile';
+      document.getElementById('profile-mode').classList.toggle('hidden', !profileActive);
+      document.getElementById('demand-mode').classList.toggle('hidden', profileActive);
+
+      profileTab.setAttribute('aria-selected', String(profileActive));
+      demandTab.setAttribute('aria-selected', String(!profileActive));
+      profileTab.classList.toggle('bg-white', profileActive);
+      profileTab.classList.toggle('text-[#202023]', profileActive);
+      profileTab.classList.toggle('shadow-[0_1px_2px_rgba(24,24,27,0.07)]', profileActive);
+      profileTab.classList.toggle('text-[#77777F]', !profileActive);
+      demandTab.classList.toggle('bg-white', !profileActive);
+      demandTab.classList.toggle('text-[#202023]', !profileActive);
+      demandTab.classList.toggle('shadow-[0_1px_2px_rgba(24,24,27,0.07)]', !profileActive);
+      demandTab.classList.toggle('text-[#77777F]', profileActive);
+
+      if (!profileActive) {
+        window.setTimeout(function () { demandInput.focus(); }, 60);
+      }
+    }
+
+    function startProfileRecommendation() {
+      profileIds = pickProfileBatch(profileIds);
+      renderResults(profileResultsEl, profileIds, 'profile', 'profile');
+      showToast('已根据当前画像更新 3 部推荐');
+    }
+
+    profileTab.addEventListener('click', function () { setMode('profile'); });
+    demandTab.addEventListener('click', function () { setMode('demand'); });
+    document.getElementById('start-profile-recommend').addEventListener('click', startProfileRecommendation);
+    document.getElementById('refresh-profile').addEventListener('click', startProfileRecommendation);
+
+    document.querySelectorAll('[data-prompt]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        demandInput.value = button.getAttribute('data-prompt');
+        demandError.classList.add('hidden');
+        demandInput.focus();
+      });
+    });
+
+    demandInput.addEventListener('input', function () {
+      demandError.classList.add('hidden');
+    });
+
+    document.getElementById('demand-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      const query = demandInput.value.trim();
+      if (!query) {
+        demandError.textContent = '先描述一下你想看什么，再为你推荐。';
+        demandError.classList.remove('hidden');
+        demandInput.focus();
+        return;
+      }
+
+      const result = selectDemand(query);
+      demandIds = result.ids;
+      lastDemandQuery = query;
+      document.getElementById('demand-query-echo').textContent = '“' + query + '”';
+      document.getElementById('demand-results-wrap').classList.remove('hidden');
+      document.getElementById('demand-empty').classList.add('hidden');
+      document.getElementById('demand-result-note').textContent = result.strictCount < 3
+        ? '完全匹配不足 3 部，已补入相近候选'
+        : '已排除 80 部已看影片';
+      renderResults(demandResultsEl, demandIds, 'demand', 'demand');
+      window.setTimeout(function () {
+        document.getElementById('demand-results-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 60);
+    });
+
+    document.addEventListener('click', function (event) {
+      const addButton = event.target.closest('[data-add-want]');
+      if (addButton) {
+        const movie = movieById(addButton.getAttribute('data-add-want'));
+        if (!movie) {
+          return;
+        }
+        wantSet.add(movie.title);
+        updateWantCount();
+        renderAllResults();
+        showToast('《' + movie.title + '》已加入想看');
+        return;
+      }
+
+      const uninterestedButton = event.target.closest('[data-not-interest]');
+      if (uninterestedButton) {
+        const movie = movieById(uninterestedButton.getAttribute('data-not-interest'));
+        const source = uninterestedButton.getAttribute('data-source');
+        if (!movie) {
+          return;
+        }
+        uninterested.add(movie.id);
+
+        if (source === 'profile') {
+          profileIds = profileIds.filter(function (id) { return id !== movie.id; });
+          const remaining = availableCandidates().filter(function (candidate) {
+            return !profileIds.includes(candidate.id);
+          });
+          if (remaining.length > 0) {
+            profileIds.push(remaining[0].id);
+          }
+          renderResults(profileResultsEl, profileIds, 'profile', 'profile');
+        } else {
+          const result = selectDemand(lastDemandQuery);
+          demandIds = result.ids;
+          renderResults(demandResultsEl, demandIds, 'demand', 'demand');
+        }
+        showToast('已记录，不再推荐《' + movie.title + '》');
+      }
+    });
+
+    profileIds = pickProfileBatch([]);
+    renderAllResults();
+    updateWantCount();
+    setMode('profile');
+  </script>
+</body></html>

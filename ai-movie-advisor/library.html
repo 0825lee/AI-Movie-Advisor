@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+
+<html class="bg-[#EEEFF1]" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>我的片库 · 幕间</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.js"></script>
+<style>
+    html {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+    body {
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    ::selection {
+      background: rgba(166, 75, 50, 0.18);
+    }
+    button, a, input, select {
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="min-w-[1440px] bg-[#EEEFF1] text-[#202023] is-mb-ai-setting">
+<div class="mx-auto min-h-screen w-[1440px] bg-white">
+<header class="border-b border-[#E9E9EC] bg-white">
+<div class="flex h-[76px] w-[1440px] items-center px-16">
+<a aria-label="幕间首页" class="flex items-center gap-3" href="library.html">
+<span class="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#A64B32] text-white">
+<iconify-icon aria-hidden="true" height="20" icon="ph:film-strip-fill" width="20"></iconify-icon>
+</span>
+<span class="flex items-baseline gap-2.5">
+<span class="text-[19px] font-semibold tracking-[0.04em] text-[#1D1D20]">9万天</span>
+</span>
+</a>
+<nav aria-label="主导航" class="ml-16 flex h-full items-center gap-9">
+<a aria-current="page" class="relative flex h-full items-center text-[14px] font-medium text-[#A64B32]" href="library.html">
+            我的片库
+            <span class="absolute inset-x-0 bottom-0 h-[2px] bg-[#A64B32]"></span>
+</a>
+<a class="flex h-full items-center text-[14px] font-medium text-[#72727B] transition-colors hover:text-[#202023]" href="ai-picks.html">
+            AI选片
+          </a>
+</nav>
+</div>
+</header>
+<main class="w-[1440px] bg-white">
+<section class="px-16 pb-10 pt-14">
+<div class="flex items-end justify-between">
+<div class="">
+<div class="mb-3 flex items-center gap-2 text-[10.5px] font-semibold tracking-[0.18em] text-[#A64B32]" style="opacity: 1;">
+<span class="h-px w-5 bg-[#A64B32]"></span>
+              私人片库
+            </div><h1 class="text-[40px] font-semibold leading-[1.15] tracking-[-0.03em] text-[#1D1D20]">我的片库</h1>
+<p class="mt-3 text-[14px] leading-6 text-[#74747D]">电影使人的寿命延长了三倍。</p>
+</div>
+<div class="flex items-center gap-3 pb-1">
+<button class="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#DEDEE3] bg-white px-4 text-[13px] font-medium text-[#3E3E44] transition-colors hover:border-[#B9B9C0] hover:bg-[#FAFAFA] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/25" id="open-import" type="button">
+<iconify-icon aria-hidden="true" height="17" icon="ph:upload-simple" width="17"></iconify-icon>
+              导入豆瓣记录
+            </button>
+<button class="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#A64B32] px-4 text-[13px] font-medium text-white shadow-[0_1px_2px_rgba(100,38,22,0.14)] transition-colors hover:bg-[#913F29] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/30 focus-visible:ring-offset-2" id="open-add" type="button">
+<iconify-icon aria-hidden="true" height="16" icon="ph:plus" width="16"></iconify-icon>
+              手动添加
+            </button>
+</div>
+</div>
+</section>
+<section class="bg-[#F7F7F8] px-16 pb-16 pt-10">
+<div class="grid grid-cols-2 gap-6">
+<!-- 片单 -->
+<section aria-labelledby="library-list-title" class="flex min-h-[900px] flex-col overflow-hidden rounded-2xl border border-[#E8E8EB] bg-white shadow-[0_1px_2px_rgba(24,24,27,0.035)]">
+<div class="px-7 pt-7">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2.5">
+<h2 class="text-[20px] font-semibold tracking-[-0.01em] text-[#202023]" id="library-list-title">片单</h2>
+<span class="rounded-full bg-[#F4F4F5] px-2.5 py-1 text-[10.5px] font-medium text-[#77777F]">
+                      共 <span id="total-count">92</span> 部
+                    </span>
+</div>
+<p class="mt-1.5 text-[12px] text-[#96969E]">按加入时间排序</p>
+</div>
+</div>
+<div class="mt-6 flex items-center gap-8 border-b border-[#ECECEF]">
+<button aria-selected="false" class="relative flex items-center gap-2 pb-3.5 pt-1 text-[14px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20 text-[#74747D]" id="tab-want" type="button">
+                  想看（<span id="want-tab-count">12</span>）
+                  <span class="tab-indicator absolute inset-x-0 -bottom-px h-[2px] bg-[#A64B32] transition-opacity opacity-0"></span>
+</button>
+<button aria-selected="true" class="relative flex items-center gap-2 pb-3.5 pt-1 text-[14px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20 text-[#A64B32]" id="tab-watched" type="button">
+                  看过（<span id="watched-tab-count">80</span>）
+                  <span class="tab-indicator absolute inset-x-0 -bottom-px h-[2px] bg-[#A64B32] transition-opacity"></span>
+</button>
+</div>
+</div>
+<div class="flex-1 flex-col hidden" id="panel-want">
+<ul aria-label="想看片单" class="flex-1 px-3 py-2" id="want-list"><li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">01</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">海上钢琴师</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">1998 · 意大利 · 剧情</p></div><button class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-mark-watched="w1" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:check" width="13"></iconify-icon>标记看过</button></li><li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">02</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">驾驶我的车</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2021 · 日本 · 剧情</p></div><button class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-mark-watched="w2" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:check" width="13"></iconify-icon>标记看过</button></li><li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">03</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">花束般的恋爱</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2021 · 日本 · 爱情</p></div><button class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-mark-watched="w3" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:check" width="13"></iconify-icon>标记看过</button></li><li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">04</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">记忆</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2021 · 哥伦比亚 · 奇幻</p></div><button class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-mark-watched="w4" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:check" width="13"></iconify-icon>标记看过</button></li><li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">05</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">奥本海默</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2023 · 美国 · 传记</p></div><button class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-mark-watched="w5" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:check" width="13"></iconify-icon>标记看过</button></li><li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">06</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">步履不停</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2008 · 日本 · 家庭</p></div><button class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-mark-watched="w6" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:check" width="13"></iconify-icon>标记看过</button></li><li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">07</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">燃烧</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2018 · 韩国 · 悬疑</p></div><button class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-mark-watched="w7" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:check" width="13"></iconify-icon>标记看过</button></li><li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">08</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">模仿游戏</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2014 · 英国 · 传记</p></div><button class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-mark-watched="w8" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:check" width="13"></iconify-icon>标记看过</button></li><li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">09</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">她</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2013 · 美国 · 科幻</p></div><button class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-mark-watched="w9" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:check" width="13"></iconify-icon>标记看过</button></li><li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">10</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">十二宫</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2007 · 美国 · 犯罪</p></div><button class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-mark-watched="w10" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:check" width="13"></iconify-icon>标记看过</button></li><li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">11</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">巴斯特·斯克鲁格斯的歌谣</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2018 · 美国 · 西部</p></div><button class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-mark-watched="w11" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:check" width="13"></iconify-icon>标记看过</button></li><li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">12</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">冷血</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">1967 · 美国 · 犯罪</p></div><button class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" data-mark-watched="w12" type="button"><iconify-icon aria-hidden="true" height="13" icon="ph:check" width="13"></iconify-icon>标记看过</button></li></ul>
+</div>
+<div class="flex-1 flex-col flex" id="panel-watched">
+<div class="flex items-center justify-between px-7 pb-2 pt-4">
+<p class="text-[11px] text-[#A0A0A8]">评分来自你的个人记录</p>
+</div>
+<ul aria-label="看过片单" class="flex-1 px-3" id="watched-list"><li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">01</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">霸王别姬</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">1993 · 中国 · 剧情</p></div><span class="inline-flex min-w-[124px] items-center justify-end gap-2"><span class="flex items-center gap-0.5"><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon></span><span class="w-6 text-right text-[11px] font-medium tabular-nums text-[#6F6F78]">5.0</span></span></li><li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">02</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">肖申克的救赎</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">1994 · 美国 · 剧情</p></div><span class="inline-flex min-w-[124px] items-center justify-end gap-2"><span class="flex items-center gap-0.5"><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon></span><span class="w-6 text-right text-[11px] font-medium tabular-nums text-[#6F6F78]">5.0</span></span></li><li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">03</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">重庆森林</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">1994 · 中国香港 · 爱情</p></div><span class="inline-flex min-w-[124px] items-center justify-end gap-2"><span class="flex items-center gap-0.5"><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-half-fill" width="13"></iconify-icon></span><span class="w-6 text-right text-[11px] font-medium tabular-nums text-[#6F6F78]">4.5</span></span></li><li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">04</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">花样年华</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2000 · 中国香港 · 剧情</p></div><span class="inline-flex min-w-[124px] items-center justify-end gap-2"><span class="flex items-center gap-0.5"><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-half-fill" width="13"></iconify-icon></span><span class="w-6 text-right text-[11px] font-medium tabular-nums text-[#6F6F78]">4.5</span></span></li><li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">05</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">一一</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2000 · 中国台湾 · 剧情</p></div><span class="inline-flex min-w-[124px] items-center justify-end gap-2"><span class="flex items-center gap-0.5"><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon></span><span class="w-6 text-right text-[11px] font-medium tabular-nums text-[#6F6F78]">5.0</span></span></li><li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">06</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">牯岭街少年杀人事件</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">1991 · 中国台湾 · 犯罪</p></div><span class="inline-flex min-w-[124px] items-center justify-end gap-2"><span class="flex items-center gap-0.5"><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon></span><span class="w-6 text-right text-[11px] font-medium tabular-nums text-[#6F6F78]">5.0</span></span></li><li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">07</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">悲情城市</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">1989 · 中国台湾 · 剧情</p></div><span class="inline-flex min-w-[124px] items-center justify-end gap-2"><span class="flex items-center gap-0.5"><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-half-fill" width="13"></iconify-icon></span><span class="w-6 text-right text-[11px] font-medium tabular-nums text-[#6F6F78]">4.5</span></span></li><li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">08</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">饮食男女</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">1994 · 中国台湾 · 家庭</p></div><span class="inline-flex min-w-[124px] items-center justify-end gap-2"><span class="flex items-center gap-0.5"><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-half-fill" width="13"></iconify-icon></span><span class="w-6 text-right text-[11px] font-medium tabular-nums text-[#6F6F78]">4.5</span></span></li><li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">09</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">卧虎藏龙</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">2000 · 中国 · 武侠</p></div><span class="inline-flex min-w-[124px] items-center justify-end gap-2"><span class="flex items-center gap-0.5"><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#DDDDE2]" height="13" icon="ph:star" width="13"></iconify-icon></span><span class="w-6 text-right text-[11px] font-medium tabular-nums text-[#6F6F78]">4.0</span></span></li><li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">10</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">阳光灿烂的日子</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">1994 · 中国 · 剧情</p></div><span class="inline-flex min-w-[124px] items-center justify-end gap-2"><span class="flex items-center gap-0.5"><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-half-fill" width="13"></iconify-icon></span><span class="w-6 text-right text-[11px] font-medium tabular-nums text-[#6F6F78]">4.5</span></span></li><li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">11</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">活着</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">1994 · 中国 · 剧情</p></div><span class="inline-flex min-w-[124px] items-center justify-end gap-2"><span class="flex items-center gap-0.5"><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-fill" width="13"></iconify-icon><iconify-icon aria-hidden="true" class="text-[#A64B32]" height="13" icon="ph:star-half-fill" width="13"></iconify-icon></span><span class="w-6 text-right text-[11px] font-medium tabular-nums text-[#6F6F78]">4.5</span></span></li><li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0"><span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">12</span><div class="min-w-0 flex-1"><p class="truncate text-[14px] font-medium text-[#2C2C31]">大红灯笼高高挂</p><p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">1991 · 中国 · 剧情</p></div><span class="inline-flex min-w-[124px] items-center justify-end text-[11.5px] text-[#A4A4AC]">未评分</span></li></ul>
+<div class="mt-auto flex items-center justify-between border-t border-[#ECECEF] px-7 py-4">
+<p class="text-[11px] tabular-nums text-[#8E8E97]" id="watched-range">1–12 / 80</p>
+<div aria-label="看过片单分页" class="flex items-center gap-1.5" id="watched-pagination"><button aria-label="上一页" class="flex h-7 w-7 items-center justify-center rounded-md border border-[#E7E7EA] bg-white text-[#8E8E97] transition-colors hover:bg-[#F7F7F8] disabled:cursor-not-allowed disabled:opacity-35" data-page="0" disabled="" type="button"><iconify-icon aria-hidden="true" height="12" icon="ph:caret-left" width="12"></iconify-icon></button><button aria-current="page" aria-label="第 1 页" class="flex h-7 min-w-7 items-center justify-center rounded-md border px-2 text-[10.5px] tabular-nums transition-colors border-[#A64B32] bg-[#A64B32] text-white" data-page="1" type="button">1</button><button aria-label="第 2 页" class="flex h-7 min-w-7 items-center justify-center rounded-md border px-2 text-[10.5px] tabular-nums transition-colors border-[#E7E7EA] bg-white text-[#73737C] hover:bg-[#F7F7F8]" data-page="2" type="button">2</button><button aria-label="第 3 页" class="flex h-7 min-w-7 items-center justify-center rounded-md border px-2 text-[10.5px] tabular-nums transition-colors border-[#E7E7EA] bg-white text-[#73737C] hover:bg-[#F7F7F8]" data-page="3" type="button">3</button><button aria-label="第 4 页" class="flex h-7 min-w-7 items-center justify-center rounded-md border px-2 text-[10.5px] tabular-nums transition-colors border-[#E7E7EA] bg-white text-[#73737C] hover:bg-[#F7F7F8]" data-page="4" type="button">4</button><button aria-label="第 5 页" class="flex h-7 min-w-7 items-center justify-center rounded-md border px-2 text-[10.5px] tabular-nums transition-colors border-[#E7E7EA] bg-white text-[#73737C] hover:bg-[#F7F7F8]" data-page="5" type="button">5</button><button aria-label="第 6 页" class="flex h-7 min-w-7 items-center justify-center rounded-md border px-2 text-[10.5px] tabular-nums transition-colors border-[#E7E7EA] bg-white text-[#73737C] hover:bg-[#F7F7F8]" data-page="6" type="button">6</button><button aria-label="第 7 页" class="flex h-7 min-w-7 items-center justify-center rounded-md border px-2 text-[10.5px] tabular-nums transition-colors border-[#E7E7EA] bg-white text-[#73737C] hover:bg-[#F7F7F8]" data-page="7" type="button">7</button><button aria-label="下一页" class="flex h-7 w-7 items-center justify-center rounded-md border border-[#E7E7EA] bg-white text-[#8E8E97] transition-colors hover:bg-[#F7F7F8] disabled:cursor-not-allowed disabled:opacity-35" data-page="2" type="button"><iconify-icon aria-hidden="true" height="12" icon="ph:caret-right" width="12"></iconify-icon></button></div>
+</div>
+</div>
+</section>
+<!-- 观影画像 -->
+<aside aria-labelledby="profile-title" class="flex min-h-[900px] flex-col rounded-2xl border border-[#E8E8EB] bg-white p-7 shadow-[0_1px_2px_rgba(24,24,27,0.035)]">
+<div class="flex items-start justify-between">
+<div>
+<div class="mb-2 flex items-center gap-2 text-[10.5px] font-semibold tracking-[0.16em] text-[#A64B32]">
+<span class="h-px w-4 bg-[#A64B32]"></span>
+                  口味分析
+                </div>
+<h2 class="text-[26px] font-semibold tracking-[-0.025em] text-[#1D1D20]" id="profile-title">我的观影画像</h2>
+<p class="mt-2 text-[12.5px] text-[#8D8D95]">基于看过的影片生成</p>
+</div>
+</div>
+<div class="mt-6 rounded-xl bg-[#F7F7F8] p-5">
+<div class="flex items-center gap-2">
+<iconify-icon aria-hidden="true" class="text-[#A64B32]" height="16" icon="ph:mask-happy" width="16"></iconify-icon>
+<h3 class="text-[12.5px] font-semibold text-[#3F3F46]">偏好类型</h3>
+</div>
+<div class="mt-4 space-y-3">
+<div class="flex items-center gap-3">
+<span class="w-8 shrink-0 text-[11.5px] text-[#5F5F67]">剧情</span>
+<span class="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E7E7EA]"><span class="block h-full rounded-full bg-[#A64B32]" style="width: 76%"></span></span>
+<span class="w-8 text-right text-[10.5px] font-medium tabular-nums text-[#8B8B94]">76%</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="w-8 shrink-0 text-[11.5px] text-[#5F5F67]">悬疑</span>
+<span class="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E7E7EA]"><span class="block h-full rounded-full bg-[#A64B32]" style="width: 58%"></span></span>
+<span class="w-8 text-right text-[10.5px] font-medium tabular-nums text-[#8B8B94]">58%</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="w-8 shrink-0 text-[11.5px] text-[#5F5F67]">科幻</span>
+<span class="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E7E7EA]"><span class="block h-full rounded-full bg-[#A64B32]" style="width: 46%"></span></span>
+<span class="w-8 text-right text-[10.5px] font-medium tabular-nums text-[#8B8B94]">46%</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="w-8 shrink-0 text-[11.5px] text-[#5F5F67]">犯罪</span>
+<span class="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E7E7EA]"><span class="block h-full rounded-full bg-[#A64B32]" style="width: 38%"></span></span>
+<span class="w-8 text-right text-[10.5px] font-medium tabular-nums text-[#8B8B94]">38%</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="w-8 shrink-0 text-[11.5px] text-[#5F5F67]">动画</span>
+<span class="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E7E7EA]"><span class="block h-full rounded-full bg-[#A64B32]" style="width: 22%"></span></span>
+<span class="w-8 text-right text-[10.5px] font-medium tabular-nums text-[#8B8B94]">22%</span>
+</div>
+</div>
+</div>
+<div class="mt-4 grid grid-cols-2 gap-4">
+<div class="rounded-xl border border-[#ECECEF] p-4">
+<div class="flex items-center gap-2 text-[11.5px] font-semibold text-[#44444B]">
+<iconify-icon aria-hidden="true" class="text-[#A64B32]" height="15" icon="ph:calendar-blank" width="15"></iconify-icon>
+                  年代偏好
+                </div>
+<div class="mt-3 flex flex-wrap gap-1.5">
+<span class="rounded-md bg-[#A64B32]/10 px-2 py-1 text-[10.5px] font-medium text-[#A64B32]">1990s · 32%</span>
+<span class="rounded-md bg-[#F4F4F5] px-2 py-1 text-[10.5px] text-[#707079]">2010s · 30%</span>
+<span class="rounded-md bg-[#F4F4F5] px-2 py-1 text-[10.5px] text-[#707079]">2000s · 22%</span>
+<span class="rounded-md bg-[#F4F4F5] px-2 py-1 text-[10.5px] text-[#707079]">更早 · 16%</span>
+</div>
+</div>
+<div class="rounded-xl border border-[#ECECEF] p-4">
+<div class="flex items-center gap-2 text-[11.5px] font-semibold text-[#44444B]">
+<iconify-icon aria-hidden="true" class="text-[#A64B32]" height="15" icon="ph:globe-hemisphere-west" width="15"></iconify-icon>
+                  国家 / 地区
+                </div>
+<div class="mt-3 flex flex-wrap gap-1.5">
+<span class="rounded-md bg-[#A64B32]/10 px-2 py-1 text-[10.5px] font-medium text-[#A64B32]">华语 · 41%</span>
+<span class="rounded-md bg-[#F4F4F5] px-2 py-1 text-[10.5px] text-[#707079]">日本 · 23%</span>
+<span class="rounded-md bg-[#F4F4F5] px-2 py-1 text-[10.5px] text-[#707079]">美国 · 21%</span>
+<span class="rounded-md bg-[#F4F4F5] px-2 py-1 text-[10.5px] text-[#707079]">其他 · 15%</span>
+</div>
+</div>
+</div>
+<div class="mt-4 rounded-xl border border-[#ECECEF] px-5 py-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 text-[11.5px] font-semibold text-[#44444B]">
+<iconify-icon aria-hidden="true" class="text-[#A64B32]" height="15" icon="ph:clapperboard" width="15"></iconify-icon>
+                  常看导演
+                </div>
+<span class="text-[10px] text-[#A1A1A9]">按看片数量</span>
+</div>
+<div class="mt-3 grid grid-cols-2 gap-x-6 gap-y-2.5">
+<div class="flex items-center justify-between">
+<span class="text-[11.5px] text-[#55555D]">王家卫</span>
+<span class="text-[10.5px] tabular-nums text-[#96969E]">6 部</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-[11.5px] text-[#55555D]">是枝裕和</span>
+<span class="text-[10.5px] tabular-nums text-[#96969E]">4 部</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-[11.5px] text-[#55555D]">克里斯托弗·诺兰</span>
+<span class="text-[10.5px] tabular-nums text-[#96969E]">4 部</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-[11.5px] text-[#55555D]">奉俊昊</span>
+<span class="text-[10.5px] tabular-nums text-[#96969E]">3 部</span>
+</div>
+</div>
+</div>
+<div class="mt-5 rounded-xl border-l-2 border-[#A64B32] bg-[#FBF8F6] px-5 py-4">
+<div class="flex items-center gap-2 text-[10.5px] font-semibold tracking-[0.12em] text-[#A64B32]">
+<iconify-icon aria-hidden="true" height="14" icon="ph:quotes" width="14"></iconify-icon>
+                口味总结
+              </div>
+<p class="mt-2.5 text-[13px] leading-[1.85] text-[#55555D]">
+                你偏爱<span class="font-medium text-[#2F2F33]">人物驱动、情绪余韵长</span>的作者电影。华语与日本片占比较高，也愿意进入结构复杂的悬疑和科幻。你给“克制、留白、时间感”的作品评分最高，对强煽情和纯娱乐向作品更谨慎。
+              </p>
+</div>
+<p class="mt-auto flex items-start gap-1.5 pt-5 text-[10.5px] leading-[1.7] text-[#A1A1A9]" style="font-size: 13px;">In this terrifying world, all we have are the connections that we make.</p>
+</aside>
+</div>
+</section>
+</main>
+</div>
+<!-- 导入豆瓣记录 -->
+<div aria-labelledby="import-title" aria-modal="true" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#1C1B1A]/40 p-6 backdrop-blur-[2px]" id="import-modal" role="dialog">
+<div class="w-[520px] overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_rgba(20,20,23,0.24)]">
+<div class="flex items-start justify-between border-b border-[#EFEFF1] px-6 py-5">
+<div class="flex items-start gap-3">
+<span class="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#A64B32]/10 text-[#A64B32]">
+<iconify-icon aria-hidden="true" height="18" icon="ph:upload-simple" width="18"></iconify-icon>
+</span>
+<div>
+<h2 class="text-[16px] font-semibold text-[#202023]" id="import-title">导入豆瓣记录</h2>
+<p class="mt-1 text-[11.5px] text-[#8D8D95]">支持豆瓣导出的 CSV 文件，自动与现有片库去重</p>
+</div>
+</div>
+<button aria-label="关闭导入窗口" class="flex h-8 w-8 items-center justify-center rounded-lg text-[#9A9AA2] transition-colors hover:bg-[#F4F4F5] hover:text-[#303035] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/25" data-close-modal="" type="button">
+<iconify-icon aria-hidden="true" height="18" icon="ph:x" width="18"></iconify-icon>
+</button>
+</div>
+<div class="px-6 py-6">
+<button class="flex w-full flex-col items-center justify-center rounded-xl border border-dashed border-[#D9D9DF] bg-[#FAFAFA] px-6 py-9 text-center transition-colors hover:border-[#A64B32]/45 hover:bg-[#FCF9F7] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20" id="choose-import-file" type="button">
+<span class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#A64B32] shadow-[0_1px_3px_rgba(24,24,27,0.08)]">
+<iconify-icon aria-hidden="true" height="22" icon="ph:file-csv" width="22"></iconify-icon>
+</span>
+<span class="mt-3 text-[13px] font-medium text-[#3D3D43]">选择豆瓣导出的 CSV 文件</span>
+<span class="mt-1.5 text-[11px] text-[#9B9BA3]" id="import-file-name">尚未选择文件 · 演示不会上传任何内容</span>
+</button>
+<input accept=".csv,text/csv" class="hidden" id="import-file-input" type="file"/>
+<div class="mt-4 rounded-lg bg-[#F7F7F8] px-4 py-3 text-[11px] leading-[1.7] text-[#85858E]">
+          导入后会保留原有“想看 / 看过”状态与个人评分。原型环境中仅模拟解析流程，不读取真实文件。
+        </div>
+</div>
+<div class="flex items-center justify-end gap-2.5 border-t border-[#EFEFF1] bg-[#FCFCFD] px-6 py-4">
+<button class="h-9 rounded-lg border border-[#DEDEE3] bg-white px-4 text-[12.5px] font-medium text-[#5E5E66] transition-colors hover:bg-[#F7F7F8]" data-close-modal="" type="button">取消</button>
+<button class="h-9 rounded-lg bg-[#A64B32] px-4 text-[12.5px] font-medium text-white transition-colors hover:bg-[#913F29]" id="simulate-import" type="button">模拟导入</button>
+</div>
+</div>
+</div>
+<!-- 手动添加 -->
+<div aria-labelledby="add-title" aria-modal="true" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#1C1B1A]/40 p-6 backdrop-blur-[2px]" id="add-modal" role="dialog">
+<div class="w-[520px] overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_rgba(20,20,23,0.24)]">
+<div class="flex items-start justify-between border-b border-[#EFEFF1] px-6 py-5">
+<div class="flex items-start gap-3">
+<span class="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#A64B32]/10 text-[#A64B32]">
+<iconify-icon aria-hidden="true" height="18" icon="ph:plus" width="18"></iconify-icon>
+</span>
+<div>
+<h2 class="text-[16px] font-semibold text-[#202023]" id="add-title">手动添加电影</h2>
+<p class="mt-1 text-[11.5px] text-[#8D8D95]">补充片名与基础信息，添加后归入“想看”</p>
+</div>
+</div>
+<button aria-label="关闭添加窗口" class="flex h-8 w-8 items-center justify-center rounded-lg text-[#9A9AA2] transition-colors hover:bg-[#F4F4F5] hover:text-[#303035] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/25" data-close-modal="" type="button">
+<iconify-icon aria-hidden="true" height="18" icon="ph:x" width="18"></iconify-icon>
+</button>
+</div>
+<form class="px-6 py-6" id="add-form">
+<div>
+<label class="text-[11.5px] font-medium text-[#5B5B63]" for="add-movie-title">电影名</label>
+<input autocomplete="off" class="mt-2 h-10 w-full rounded-lg border border-[#DEDEE3] bg-white px-3 text-[13px] text-[#252529] placeholder:text-[#B1B1B8] focus:border-[#A64B32] focus:outline-none focus:ring-2 focus:ring-[#A64B32]/10" id="add-movie-title" placeholder="输入电影中文名" type="text"/>
+</div>
+<div class="mt-4 grid grid-cols-2 gap-4">
+<div>
+<label class="text-[11.5px] font-medium text-[#5B5B63]" for="add-movie-year">上映年份</label>
+<input class="mt-2 h-10 w-full rounded-lg border border-[#DEDEE3] bg-white px-3 text-[13px] text-[#252529] placeholder:text-[#B1B1B8] focus:border-[#A64B32] focus:outline-none focus:ring-2 focus:ring-[#A64B32]/10" id="add-movie-year" max="2026" min="1900" placeholder="例如 2023" type="number"/>
+</div>
+<div>
+<label class="text-[11.5px] font-medium text-[#5B5B63]" for="add-movie-genre">主要类型</label>
+<select class="mt-2 h-10 w-full rounded-lg border border-[#DEDEE3] bg-white px-3 text-[13px] text-[#252529] focus:border-[#A64B32] focus:outline-none focus:ring-2 focus:ring-[#A64B32]/10" id="add-movie-genre">
+<option>剧情</option>
+<option>悬疑</option>
+<option>科幻</option>
+<option>犯罪</option>
+<option>爱情</option>
+<option>动画</option>
+</select>
+</div>
+</div>
+<div class="mt-4">
+<label class="text-[11.5px] font-medium text-[#5B5B63]" for="add-movie-region">国家 / 地区</label>
+<select class="mt-2 h-10 w-full rounded-lg border border-[#DEDEE3] bg-white px-3 text-[13px] text-[#252529] focus:border-[#A64B32] focus:outline-none focus:ring-2 focus:ring-[#A64B32]/10" id="add-movie-region">
+<option>中国</option>
+<option>日本</option>
+<option>韩国</option>
+<option>美国</option>
+<option>法国</option>
+<option>英国</option>
+<option>其他</option>
+</select>
+</div>
+<p class="mt-3 hidden text-[11.5px] text-[#A64B32]" id="add-form-error"></p>
+<p class="mt-4 rounded-lg bg-[#F7F7F8] px-4 py-3 text-[11px] leading-[1.7] text-[#85858E]">这条记录只会加入当前页面的模拟数据，并计入“想看”数量。</p>
+<div class="mt-5 flex items-center justify-end gap-2.5">
+<button class="h-9 rounded-lg border border-[#DEDEE3] bg-white px-4 text-[12.5px] font-medium text-[#5E5E66] transition-colors hover:bg-[#F7F7F8]" data-close-modal="" type="button">取消</button>
+<button class="h-9 rounded-lg bg-[#A64B32] px-4 text-[12.5px] font-medium text-white transition-colors hover:bg-[#913F29]" type="submit">加入想看</button>
+</div>
+</form>
+</div>
+</div>
+<div aria-live="polite" class="pointer-events-none fixed bottom-8 left-1/2 z-[80] hidden -translate-x-1/2 translate-y-3 items-center gap-2.5 rounded-xl bg-[#252529] px-4 py-3 text-[12px] font-medium text-white opacity-0 shadow-[0_12px_36px_rgba(20,20,23,0.24)] transition-all duration-200" id="toast" role="status">
+<iconify-icon aria-hidden="true" class="text-[#DCA28E]" height="16" icon="ph:check-circle-fill" width="16"></iconify-icon>
+<span data-toast-text=""></span>
+</div>
+<script>
+    const wantMovies = [
+      { id: 'w1', title: '海上钢琴师', year: 1998, region: '意大利', genre: '剧情' },
+      { id: 'w2', title: '驾驶我的车', year: 2021, region: '日本', genre: '剧情' },
+      { id: 'w3', title: '花束般的恋爱', year: 2021, region: '日本', genre: '爱情' },
+      { id: 'w4', title: '记忆', year: 2021, region: '哥伦比亚', genre: '奇幻' },
+      { id: 'w5', title: '奥本海默', year: 2023, region: '美国', genre: '传记' },
+      { id: 'w6', title: '步履不停', year: 2008, region: '日本', genre: '家庭' },
+      { id: 'w7', title: '燃烧', year: 2018, region: '韩国', genre: '悬疑' },
+      { id: 'w8', title: '模仿游戏', year: 2014, region: '英国', genre: '传记' },
+      { id: 'w9', title: '她', year: 2013, region: '美国', genre: '科幻' },
+      { id: 'w10', title: '十二宫', year: 2007, region: '美国', genre: '犯罪' },
+      { id: 'w11', title: '巴斯特·斯克鲁格斯的歌谣', year: 2018, region: '美国', genre: '西部' },
+      { id: 'w12', title: '冷血', year: 1967, region: '美国', genre: '犯罪' }
+    ];
+
+    let watchedMovies = [
+      { id: 's1', title: '霸王别姬', year: 1993, region: '中国', genre: '剧情', rating: 5 },
+      { id: 's2', title: '肖申克的救赎', year: 1994, region: '美国', genre: '剧情', rating: 5 },
+      { id: 's3', title: '重庆森林', year: 1994, region: '中国香港', genre: '爱情', rating: 4.5 },
+      { id: 's4', title: '花样年华', year: 2000, region: '中国香港', genre: '剧情', rating: 4.5 },
+      { id: 's5', title: '一一', year: 2000, region: '中国台湾', genre: '剧情', rating: 5 },
+      { id: 's6', title: '牯岭街少年杀人事件', year: 1991, region: '中国台湾', genre: '犯罪', rating: 5 },
+      { id: 's7', title: '悲情城市', year: 1989, region: '中国台湾', genre: '剧情', rating: 4.5 },
+      { id: 's8', title: '饮食男女', year: 1994, region: '中国台湾', genre: '家庭', rating: 4.5 },
+      { id: 's9', title: '卧虎藏龙', year: 2000, region: '中国', genre: '武侠', rating: 4 },
+      { id: 's10', title: '阳光灿烂的日子', year: 1994, region: '中国', genre: '剧情', rating: 4.5 },
+      { id: 's11', title: '活着', year: 1994, region: '中国', genre: '剧情', rating: 4.5 },
+      { id: 's12', title: '大红灯笼高高挂', year: 1991, region: '中国', genre: '剧情', rating: null },
+      { id: 's13', title: '春光乍泄', year: 1997, region: '中国香港', genre: '爱情', rating: 4.5 },
+      { id: 's14', title: '堕落天使', year: 1995, region: '中国香港', genre: '剧情', rating: 4 },
+      { id: 's15', title: '东邪西毒', year: 1994, region: '中国香港', genre: '武侠', rating: 4.5 },
+      { id: 's16', title: '阿飞正传', year: 1990, region: '中国香港', genre: '剧情', rating: 4 },
+      { id: 's17', title: '英雄本色', year: 1986, region: '中国香港', genre: '犯罪', rating: 4 },
+      { id: 's18', title: '无间道', year: 2002, region: '中国香港', genre: '犯罪', rating: 4.5 },
+      { id: 's19', title: '色，戒', year: 2007, region: '中国台湾', genre: '剧情', rating: 4.5 },
+      { id: 's20', title: '刺客聂隐娘', year: 2015, region: '中国台湾', genre: '武侠', rating: 4 },
+      { id: 's21', title: '路边野餐', year: 2015, region: '中国', genre: '剧情', rating: 4 },
+      { id: 's22', title: '地球最后的夜晚', year: 2018, region: '中国', genre: '悬疑', rating: 4 },
+      { id: 's23', title: '地久天长', year: 2019, region: '中国', genre: '剧情', rating: 4.5 },
+      { id: 's24', title: '白日焰火', year: 2014, region: '中国', genre: '悬疑', rating: 4 },
+      { id: 's25', title: '烈日灼心', year: 2015, region: '中国', genre: '犯罪', rating: 4 },
+      { id: 's26', title: '心迷宫', year: 2014, region: '中国', genre: '悬疑', rating: 4.5 },
+      { id: 's27', title: '暴裂无声', year: 2017, region: '中国', genre: '悬疑', rating: 4.5 },
+      { id: 's28', title: '我不是药神', year: 2018, region: '中国', genre: '剧情', rating: 4.5 },
+      { id: 's29', title: '无名之辈', year: 2018, region: '中国', genre: '剧情', rating: 3.5 },
+      { id: 's30', title: '少年的你', year: 2019, region: '中国', genre: '剧情', rating: 4 },
+      { id: 's31', title: '送你一朵小红花', year: 2020, region: '中国', genre: '剧情', rating: 3.5 },
+      { id: 's32', title: '你好，李焕英', year: 2021, region: '中国', genre: '喜剧', rating: null },
+      { id: 's33', title: '消失的她', year: 2023, region: '中国', genre: '悬疑', rating: null },
+      { id: 's34', title: '宇宙探索编辑部', year: 2021, region: '中国', genre: '科幻', rating: 4.5 },
+      { id: 's35', title: '沙丘', year: 2021, region: '美国', genre: '科幻', rating: 4 },
+      { id: 's36', title: '沙丘2', year: 2024, region: '美国', genre: '科幻', rating: 4.5 },
+      { id: 's37', title: '星际穿越', year: 2014, region: '美国', genre: '科幻', rating: 5 },
+      { id: 's38', title: '盗梦空间', year: 2010, region: '美国', genre: '科幻', rating: 4.5 },
+      { id: 's39', title: '银翼杀手2049', year: 2017, region: '美国', genre: '科幻', rating: 4.5 },
+      { id: 's40', title: '降临', year: 2016, region: '美国', genre: '科幻', rating: 4.5 },
+      { id: 's41', title: '机械姬', year: 2014, region: '英国', genre: '科幻', rating: 4 },
+      { id: 's42', title: '月球', year: 2009, region: '英国', genre: '科幻', rating: 4 },
+      { id: 's43', title: '2001太空漫游', year: 1968, region: '美国', genre: '科幻', rating: 4.5 },
+      { id: 's44', title: '潜行者', year: 1979, region: '苏联', genre: '科幻', rating: 4.5 },
+      { id: 's45', title: '飞向太空', year: 1972, region: '苏联', genre: '科幻', rating: 4.5 },
+      { id: 's46', title: '七武士', year: 1954, region: '日本', genre: '剧情', rating: 4.5 },
+      { id: 's47', title: '罗生门', year: 1950, region: '日本', genre: '悬疑', rating: 4.5 },
+      { id: 's48', title: '东京物语', year: 1953, region: '日本', genre: '家庭', rating: 5 },
+      { id: 's49', title: '东京奏鸣曲', year: 2008, region: '日本', genre: '剧情', rating: 4 },
+      { id: 's50', title: '情书', year: 1995, region: '日本', genre: '爱情', rating: 4 },
+      { id: 's51', title: '被嫌弃的松子的一生', year: 2006, region: '日本', genre: '剧情', rating: 4.5 },
+      { id: 's52', title: '小偷家族', year: 2018, region: '日本', genre: '家庭', rating: 4.5 },
+      { id: 's53', title: '海街日记', year: 2015, region: '日本', genre: '家庭', rating: 4.5 },
+      { id: 's54', title: '无人知晓', year: 2004, region: '日本', genre: '剧情', rating: 4.5 },
+      { id: 's55', title: '菊次郎的夏天', year: 1999, region: '日本', genre: '剧情', rating: 4 },
+      { id: 's56', title: '你的名字', year: 2016, region: '日本', genre: '动画', rating: 4 },
+      { id: 's57', title: '千与千寻', year: 2001, region: '日本', genre: '动画', rating: 4.5 },
+      { id: 's58', title: '龙猫', year: 1988, region: '日本', genre: '动画', rating: 4 },
+      { id: 's59', title: '红辣椒', year: 2006, region: '日本', genre: '动画', rating: 4.5 },
+      { id: 's60', title: '攻壳机动队', year: 1995, region: '日本', genre: '科幻', rating: 4.5 },
+      { id: 's61', title: '未麻的部屋', year: 1997, region: '日本', genre: '动画', rating: 4.5 },
+      { id: 's62', title: '教父', year: 1972, region: '美国', genre: '犯罪', rating: 5 },
+      { id: 's63', title: '教父2', year: 1974, region: '美国', genre: '犯罪', rating: 5 },
+      { id: 's64', title: '现代启示录', year: 1979, region: '美国', genre: '战争', rating: 4.5 },
+      { id: 's65', title: '出租车司机', year: 1976, region: '美国', genre: '剧情', rating: 4 },
+      { id: 's66', title: '银翼杀手', year: 1982, region: '美国', genre: '科幻', rating: 4.5 },
+      { id: 's67', title: '穆赫兰道', year: 2001, region: '美国', genre: '悬疑', rating: 4.5 },
+      { id: 's68', title: '记忆碎片', year: 2000, region: '美国', genre: '悬疑', rating: 4 },
+      { id: 's69', title: '禁闭岛', year: 2010, region: '美国', genre: '悬疑', rating: 4 },
+      { id: 's70', title: '搏击俱乐部', year: 1999, region: '美国', genre: '剧情', rating: 4 },
+      { id: 's71', title: '七宗罪', year: 1995, region: '美国', genre: '犯罪', rating: 4.5 },
+      { id: 's72', title: '十二怒汉', year: 1957, region: '美国', genre: '剧情', rating: 5 },
+      { id: 's73', title: '控方证人', year: 1957, region: '美国', genre: '悬疑', rating: 4.5 },
+      { id: 's74', title: '后窗', year: 1954, region: '美国', genre: '悬疑', rating: 4 },
+      { id: 's75', title: '迷魂记', year: 1958, region: '美国', genre: '悬疑', rating: 4.5 },
+      { id: 's76', title: '日落大道', year: 1950, region: '美国', genre: '剧情', rating: 4.5 },
+      { id: 's77', title: '爱乐之城', year: 2016, region: '美国', genre: '爱情', rating: 4 },
+      { id: 's78', title: '爆裂鼓手', year: 2014, region: '美国', genre: '剧情', rating: 4.5 },
+      { id: 's79', title: '海边的曼彻斯特', year: 2016, region: '美国', genre: '剧情', rating: 5 },
+      { id: 's80', title: '罗马', year: 2018, region: '墨西哥', genre: '剧情', rating: 4.5 }
+    ];
+
+    const watchedPerPage = 12;
+    let watchedPage = 1;
+
+    const wantListEl = document.getElementById('want-list');
+    const watchedListEl = document.getElementById('watched-list');
+    const watchedPaginationEl = document.getElementById('watched-pagination');
+    const panelWant = document.getElementById('panel-want');
+    const panelWatched = document.getElementById('panel-watched');
+    const tabWant = document.getElementById('tab-want');
+    const tabWatched = document.getElementById('tab-watched');
+    const toastEl = document.getElementById('toast');
+    let toastTimer = null;
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, function (character) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[character];
+      });
+    }
+
+    function renderStars(rating) {
+      if (rating === null || rating === undefined) {
+        return '<span class="inline-flex min-w-[124px] items-center justify-end text-[11.5px] text-[#A4A4AC]">未评分</span>';
+      }
+      let stars = '';
+      for (let index = 0; index < 5; index += 1) {
+        let icon = 'ph:star';
+        let colorClass = 'text-[#DDDDE2]';
+        if (index < Math.floor(rating)) {
+          icon = 'ph:star-fill';
+          colorClass = 'text-[#A64B32]';
+        } else if (index === Math.floor(rating) && rating % 1 >= 0.5) {
+          icon = 'ph:star-half-fill';
+          colorClass = 'text-[#A64B32]';
+        }
+        stars += '<iconify-icon icon="' + icon + '" width="13" height="13" class="' + colorClass + '" aria-hidden="true"></iconify-icon>';
+      }
+      return '<span class="inline-flex min-w-[124px] items-center justify-end gap-2">' +
+        '<span class="flex items-center gap-0.5">' + stars + '</span>' +
+        '<span class="w-6 text-right text-[11px] font-medium tabular-nums text-[#6F6F78]">' + rating.toFixed(1) + '</span>' +
+        '</span>';
+    }
+
+    function renderWantList() {
+      if (wantMovies.length === 0) {
+        wantListEl.innerHTML = '<li class="flex min-h-[420px] flex-col items-center justify-center px-8 text-center">' +
+          '<span class="flex h-12 w-12 items-center justify-center rounded-full bg-[#F6F6F7] text-[#A64B32]"><iconify-icon icon="ph:film-script" width="23" height="23" aria-hidden="true"></iconify-icon></span>' +
+          '<p class="mt-4 text-[14px] font-medium text-[#4C4C53]">想看列表还是空的</p>' +
+          '<p class="mt-1.5 text-[12px] text-[#97979F]">手动添加一部，或从 AI 选片结果中加入。</p>' +
+          '</li>';
+        return;
+      }
+
+      wantListEl.innerHTML = wantMovies.map(function (movie, index) {
+        return '<li class="flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-2.5 transition-colors hover:bg-[#FAFAFA]">' +
+          '<span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">' + String(index + 1).padStart(2, '0') + '</span>' +
+          '<div class="min-w-0 flex-1">' +
+            '<p class="truncate text-[14px] font-medium text-[#2C2C31]">' + escapeHTML(movie.title) + '</p>' +
+            '<p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">' + movie.year + ' · ' + escapeHTML(movie.region) + ' · ' + escapeHTML(movie.genre) + '</p>' +
+          '</div>' +
+          '<button type="button" data-mark-watched="' + movie.id + '" class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E2E2E6] bg-white px-3 text-[11.5px] font-medium text-[#6A6A72] transition-colors hover:border-[#A64B32]/35 hover:bg-[#FCF8F6] hover:text-[#A64B32] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A64B32]/20">' +
+            '<iconify-icon icon="ph:check" width="13" height="13" aria-hidden="true"></iconify-icon>' +
+            '标记看过' +
+          '</button>' +
+          '</li>';
+      }).join('');
+    }
+
+    function renderWatchedList() {
+      const totalPages = Math.max(1, Math.ceil(watchedMovies.length / watchedPerPage));
+      if (watchedPage > totalPages) {
+        watchedPage = totalPages;
+      }
+      const start = (watchedPage - 1) * watchedPerPage;
+      const pageMovies = watchedMovies.slice(start, start + watchedPerPage);
+
+      watchedListEl.innerHTML = pageMovies.map(function (movie, index) {
+        return '<li class="flex min-h-[60px] items-center gap-4 border-b border-[#F2F2F4] px-4 py-2.5 last:border-b-0">' +
+          '<span class="w-7 shrink-0 text-center font-mono text-[10.5px] tracking-[0.05em] text-[#B4B4BC]">' + String(start + index + 1).padStart(2, '0') + '</span>' +
+          '<div class="min-w-0 flex-1">' +
+            '<p class="truncate text-[14px] font-medium text-[#2C2C31]">' + escapeHTML(movie.title) + '</p>' +
+            '<p class="mt-0.5 text-[10.5px] text-[#9A9AA2]">' + movie.year + ' · ' + escapeHTML(movie.region) + ' · ' + escapeHTML(movie.genre) + '</p>' +
+          '</div>' +
+          renderStars(movie.rating) +
+          '</li>';
+      }).join('');
+
+      const end = Math.min(start + watchedPerPage, watchedMovies.length);
+      document.getElementById('watched-range').textContent = watchedMovies.length === 0 ? '0 / 0' : (start + 1) + '–' + end + ' / ' + watchedMovies.length;
+
+      let pagination = '<button type="button" data-page="' + (watchedPage - 1) + '" ' + (watchedPage === 1 ? 'disabled' : '') + ' class="flex h-7 w-7 items-center justify-center rounded-md border border-[#E7E7EA] bg-white text-[#8E8E97] transition-colors hover:bg-[#F7F7F8] disabled:cursor-not-allowed disabled:opacity-35" aria-label="上一页">' +
+        '<iconify-icon icon="ph:caret-left" width="12" height="12" aria-hidden="true"></iconify-icon>' +
+        '</button>';
+      for (let page = 1; page <= totalPages; page += 1) {
+        const activeClass = page === watchedPage
+          ? 'border-[#A64B32] bg-[#A64B32] text-white'
+          : 'border-[#E7E7EA] bg-white text-[#73737C] hover:bg-[#F7F7F8]';
+        pagination += '<button type="button" data-page="' + page + '" class="flex h-7 min-w-7 items-center justify-center rounded-md border px-2 text-[10.5px] tabular-nums transition-colors ' + activeClass + '" aria-label="第 ' + page + ' 页" ' + (page === watchedPage ? 'aria-current="page"' : '') + '>' + page + '</button>';
+      }
+      pagination += '<button type="button" data-page="' + (watchedPage + 1) + '" ' + (watchedPage === totalPages ? 'disabled' : '') + ' class="flex h-7 w-7 items-center justify-center rounded-md border border-[#E7E7EA] bg-white text-[#8E8E97] transition-colors hover:bg-[#F7F7F8] disabled:cursor-not-allowed disabled:opacity-35" aria-label="下一页">' +
+        '<iconify-icon icon="ph:caret-right" width="12" height="12" aria-hidden="true"></iconify-icon>' +
+        '</button>';
+      watchedPaginationEl.innerHTML = pagination;
+    }
+
+    function updateCounts() {
+      document.getElementById('total-count').textContent = String(wantMovies.length + watchedMovies.length);
+      document.getElementById('want-tab-count').textContent = String(wantMovies.length);
+      document.getElementById('watched-tab-count').textContent = String(watchedMovies.length);
+      document.getElementById('title-want-count').textContent = String(wantMovies.length);
+      document.getElementById('title-watched-count').textContent = String(watchedMovies.length);
+      document.getElementById('profile-movie-count').textContent = String(watchedMovies.length);
+    }
+
+    function setTab(tab) {
+      const wantActive = tab === 'want';
+      panelWant.classList.toggle('hidden', !wantActive);
+      panelWatched.classList.toggle('hidden', wantActive);
+      panelWant.classList.toggle('flex', wantActive);
+      panelWatched.classList.toggle('flex', !wantActive);
+
+      tabWant.setAttribute('aria-selected', String(wantActive));
+      tabWatched.setAttribute('aria-selected', String(!wantActive));
+      tabWant.classList.toggle('text-[#A64B32]', wantActive);
+      tabWant.classList.toggle('text-[#74747D]', !wantActive);
+      tabWatched.classList.toggle('text-[#A64B32]', !wantActive);
+      tabWatched.classList.toggle('text-[#74747D]', wantActive);
+      tabWant.querySelector('.tab-indicator').classList.toggle('opacity-0', !wantActive);
+      tabWatched.querySelector('.tab-indicator').classList.toggle('opacity-0', wantActive);
+    }
+
+    function showToast(message) {
+      const textEl = toastEl.querySelector('[data-toast-text]');
+      textEl.textContent = message;
+      window.clearTimeout(toastTimer);
+      toastEl.classList.remove('hidden');
+      toastEl.classList.add('flex');
+      window.requestAnimationFrame(function () {
+        toastEl.classList.remove('translate-y-3', 'opacity-0');
+        toastEl.classList.add('translate-y-0', 'opacity-100');
+      });
+      toastTimer = window.setTimeout(function () {
+        toastEl.classList.remove('translate-y-0', 'opacity-100');
+        toastEl.classList.add('translate-y-3', 'opacity-0');
+        window.setTimeout(function () {
+          toastEl.classList.remove('flex');
+          toastEl.classList.add('hidden');
+        }, 200);
+      }, 2600);
+    }
+
+    function openModal(modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.classList.add('overflow-hidden');
+    }
+
+    function closeModal(modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      if (!document.querySelector('#import-modal.flex, #add-modal.flex')) {
+        document.body.classList.remove('overflow-hidden');
+      }
+    }
+
+    tabWant.addEventListener('click', function () { setTab('want'); });
+    tabWatched.addEventListener('click', function () { setTab('watched'); });
+
+    wantListEl.addEventListener('click', function (event) {
+      const button = event.target.closest('[data-mark-watched]');
+      if (!button) {
+        return;
+      }
+      const movieId = button.getAttribute('data-mark-watched');
+      const movieIndex = wantMovies.findIndex(function (movie) { return movie.id === movieId; });
+      if (movieIndex === -1) {
+        return;
+      }
+      const movie = wantMovies.splice(movieIndex, 1)[0];
+      watchedMovies.unshift({
+        id: 'watched-' + Date.now(),
+        title: movie.title,
+        year: movie.year,
+        region: movie.region,
+        genre: movie.genre,
+        rating: null
+      });
+      watchedPage = 1;
+      updateCounts();
+      renderWantList();
+      renderWatchedList();
+      showToast('《' + movie.title + '》已移至“看过”，暂未评分');
+    });
+
+    watchedPaginationEl.addEventListener('click', function (event) {
+      const button = event.target.closest('[data-page]');
+      if (!button || button.disabled) {
+        return;
+      }
+      const nextPage = Number(button.getAttribute('data-page'));
+      const totalPages = Math.max(1, Math.ceil(watchedMovies.length / watchedPerPage));
+      if (nextPage >= 1 && nextPage <= totalPages) {
+        watchedPage = nextPage;
+        renderWatchedList();
+      }
+    });
+
+    const importModal = document.getElementById('import-modal');
+    const addModal = document.getElementById('add-modal');
+    const fileInput = document.getElementById('import-file-input');
+    const fileNameEl = document.getElementById('import-file-name');
+
+    document.getElementById('open-import').addEventListener('click', function () {
+      openModal(importModal);
+    });
+
+    document.getElementById('open-add').addEventListener('click', function () {
+      openModal(addModal);
+      window.setTimeout(function () {
+        document.getElementById('add-movie-title').focus();
+      }, 60);
+    });
+
+    document.querySelectorAll('[data-close-modal]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        closeModal(button.closest('[role="dialog"]'));
+      });
+    });
+
+    [importModal, addModal].forEach(function (modal) {
+      modal.addEventListener('click', function (event) {
+        if (event.target === modal) {
+          closeModal(modal);
+        }
+      });
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        if (!importModal.classList.contains('hidden')) {
+          closeModal(importModal);
+        }
+        if (!addModal.classList.contains('hidden')) {
+          closeModal(addModal);
+        }
+      }
+    });
+
+    document.getElementById('choose-import-file').addEventListener('click', function () {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function () {
+      if (fileInput.files && fileInput.files.length > 0) {
+        fileNameEl.textContent = fileInput.files[0].name + ' · 已选择（仅演示）';
+        fileNameEl.classList.remove('text-[#9B9BA3]');
+        fileNameEl.classList.add('text-[#6C6C75]');
+      }
+    });
+
+    document.getElementById('simulate-import').addEventListener('click', function () {
+      const importButton = document.getElementById('simulate-import');
+      importButton.disabled = true;
+      importButton.textContent = '正在解析…';
+      importButton.classList.add('opacity-70');
+      window.setTimeout(function () {
+        importButton.disabled = false;
+        importButton.textContent = '模拟导入';
+        importButton.classList.remove('opacity-70');
+        closeModal(importModal);
+        showToast('示例记录解析完成，当前片库无重复条目');
+      }, 700);
+    });
+
+    document.getElementById('add-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      const titleInput = document.getElementById('add-movie-title');
+      const yearInput = document.getElementById('add-movie-year');
+      const genreInput = document.getElementById('add-movie-genre');
+      const regionInput = document.getElementById('add-movie-region');
+      const errorEl = document.getElementById('add-form-error');
+      const title = titleInput.value.trim();
+      const year = Number(yearInput.value);
+
+      if (!title) {
+        errorEl.textContent = '请先填写电影名。';
+        errorEl.classList.remove('hidden');
+        titleInput.focus();
+        return;
+      }
+      if (wantMovies.some(function (movie) { return movie.title === title; }) || watchedMovies.some(function (movie) { return movie.title === title; })) {
+        errorEl.textContent = '片库中已有这部电影，请检查后重试。';
+        errorEl.classList.remove('hidden');
+        titleInput.focus();
+        return;
+      }
+      if (yearInput.value && (year < 1900 || year > 2026)) {
+        errorEl.textContent = '上映年份需在 1900 到 2026 之间。';
+        errorEl.classList.remove('hidden');
+        yearInput.focus();
+        return;
+      }
+
+      wantMovies.unshift({
+        id: 'manual-' + Date.now(),
+        title: title,
+        year: yearInput.value ? year : '年份待补',
+        region: regionInput.value,
+        genre: genreInput.value
+      });
+      updateCounts();
+      renderWantList();
+      setTab('want');
+      closeModal(addModal);
+      errorEl.classList.add('hidden');
+      document.getElementById('add-form').reset();
+      showToast('《' + title + '》已加入想看片单');
+    });
+
+    document.getElementById('add-movie-title').addEventListener('input', function () {
+      document.getElementById('add-form-error').classList.add('hidden');
+    });
+
+    renderWantList();
+    renderWatchedList();
+    updateCounts();
+    setTab('want');
+  </script>
+</body></html>
