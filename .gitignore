@@ -1,6 +1,14 @@
 .env
 .env.*
 !.env.example
+# Keep planning documents local; only README.md is shared.
+*.md
+!README.md
+*.doc
+*.docx
+*.pdf
+*.rtf
+*.odt
 **/.venv/
 **/node_modules/
 **/__pycache__/

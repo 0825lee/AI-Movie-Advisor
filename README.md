@@ -9,7 +9,7 @@
 - frontend：React＋TypeScript＋Vite。
 - backend：FastAPI、SQLite、Alembic、Dify 客户端与测试。
 - ai-movie-advisor：保留的墨刀 HTML 原型。
-- 开发执行计划.md、模块开发执行指引.md：产品规则与后续模块。
+- 开发执行计划.md、模块开发执行指引.md：仅保留在本地的产品规则与后续模块文档，不纳入 Git。
 
 ## 首次安装
 
@@ -67,7 +67,11 @@ npm run dev
 - DIFY_SMOKE_API_KEY：已发布的 movie-connection-test 应用的 Service API Key，不是 DeepSeek Key。
 - TMDB_READ_ACCESS_TOKEN：TMDB 的只读访问令牌。
 - MOVIE_INTERNAL_TOKEN：本机已自动生成，Dify 回调时使用相同值。
-- 三个业务 Workflow 的 Key 在后续模块配置。
+- DIFY_PROFILE_API_KEY：观影画像 Workflow 的 Key，模块 5 配置。
+- DIFY_REQUEST_API_KEY：按本次需求推荐 Workflow 的 Key，模块 6 配置。
+- DIFY_PERSONALIZED_API_KEY：按画像推荐 Workflow 的 Key，模块 7 配置。
+
+当前三个业务 Key 均可留空，连通测试只使用 DIFY_SMOKE_API_KEY。
 
 修改配置后重启后端。
 
@@ -115,3 +119,5 @@ npm run build
 远端：https://github.com/0825lee/AI-Movie-Advisor
 
 提交前使用 git status --short 检查待提交文件。原始豆瓣 JSON 属于个人数据，不作为公共仓库样例提交。
+
+除 README.md 外，Markdown 开发文档以及 Word／PDF 等文档仅在本地维护，由忽略规则排除。
