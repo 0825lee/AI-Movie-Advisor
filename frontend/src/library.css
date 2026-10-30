@@ -28,6 +28,9 @@ body { background: #eeeff1; }
 .library-title-row { display: flex; align-items: center; gap: 10px; }
 .library-title-row h2 { margin: 0; font-size: 20px; letter-spacing: -.01em; font-weight: 600; }
 .total-badge { border-radius: 30px; background: #f4f4f5; padding: 4px 10px; font-size: 10.5px; color: #77777f; }
+.clear-library-button { margin-left: auto; padding: 5px 0 5px 10px; background: none; border: 0; color: #a28b82; font-size: 11px; cursor: pointer; }
+.clear-library-button:hover { color: #a64b32; }
+.clear-library-button:disabled { opacity: .5; cursor: default; }
 .library-list-heading > p { margin: 6px 0 0; color: #96969e; font-size: 12px; }
 .library-tabs { display: flex; gap: 32px; border-bottom: 1px solid #ececef; margin-top: 24px; }
 .library-tabs button { position: relative; padding: 4px 0 14px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; color: #74747d; font-size: 14px; font-weight: 500; cursor: pointer; }

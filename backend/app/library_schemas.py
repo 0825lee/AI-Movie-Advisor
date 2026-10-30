@@ -47,6 +47,10 @@ class LibraryCounts(BaseModel):
     watched: int = 0
 
 
+class ClearLibraryResult(BaseModel):
+    deleted: int
+
+
 class LibraryPage(BaseModel):
     items: list[LibraryEntry]
     counts: LibraryCounts

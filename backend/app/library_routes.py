@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from app.catalog_routes import get_catalog
 from app.catalog_schemas import CatalogRef, SearchType
 from app.catalog_service import CatalogService
-from app.library_schemas import LibraryEntry, LibraryPage, LibraryState, LibraryStatus, ManualAdd, MarkWatched
+from app.library_schemas import ClearLibraryResult, LibraryEntry, LibraryPage, LibraryState, LibraryStatus, ManualAdd, MarkWatched
 from app.library_service import LibraryService
 
 router = APIRouter(prefix="/library", tags=["我的片库"])
@@ -29,6 +29,12 @@ def list_library(
 @router.get("/state", response_model=LibraryState)
 def get_library_state(ref: Annotated[CatalogRef, Query()], service: Service) -> LibraryState:
     return service.state(ref)
+
+
+@router.delete("", response_model=ClearLibraryResult)
+def clear_library(service: Service) -> ClearLibraryResult:
+    """清空想看、看过及个人评分，保留作品资料缓存。"""
+    return ClearLibraryResult(deleted=service.clear())
 
 
 @router.post("/manual", response_model=LibraryEntry)

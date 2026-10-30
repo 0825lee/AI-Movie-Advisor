@@ -1,7 +1,7 @@
 import time
 
 from fastapi import HTTPException
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
@@ -34,6 +34,12 @@ class LibraryService:
                 item_id=item.id, status=item.status, rating=item.rating,
                 score=item.rating * 2 if item.rating is not None else None,
             )
+
+    def clear(self) -> int:
+        with Session(self.engine) as session:
+            result = session.execute(delete(UserItem))
+            session.commit()
+            return result.rowcount
 
     def list(self, status: LibraryStatus, media_type: SearchType, query: str, page: int) -> LibraryPage:
         with Session(self.engine) as session:

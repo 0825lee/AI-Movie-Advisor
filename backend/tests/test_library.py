@@ -1,6 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from app.catalog_models import CatalogItem, SourceMapping
 from app.main import create_app
 from test_catalog import catalog  # noqa: F401 -- reuse the TMDB fixture
 
@@ -126,3 +129,23 @@ def test_whole_series_cannot_be_added_as_a_personal_work(catalog):
         response = client.post("/library/manual", json={"media_type": "tv", "tmdb_id": 1, "status": status})
         assert response.status_code == 422
     assert client.get("/library").json()["counts"] == {"wish": 0, "watched": 0}
+
+
+def test_clear_library_removes_personal_records_and_keeps_cached_works(catalog):
+    client, engine, calls = catalog
+    add(client, "watched", rating=5)
+    add(client, media_type="season", season_number=1)
+    response = client.post("/catalog/confirm", json={"media_type": "movie", "tmdb_id": 1, "source": {"source_id": "123"}})
+    assert response.status_code == 200
+    with Session(engine) as session:
+        before = len(session.scalars(select(CatalogItem)).all())
+    network_before = calls.copy()
+    assert client.delete("/library").json() == {"deleted": 2}
+    assert client.get("/library").json()["counts"] == {"wish": 0, "watched": 0}
+    assert client.get("/library?status=wish").json()["items"] == []
+    assert client.get("/library/state?media_type=movie&tmdb_id=1").json()["status"] is None
+    with Session(engine) as session:
+        assert len(session.scalars(select(CatalogItem)).all()) == before
+        assert len(session.scalars(select(SourceMapping)).all()) == 1
+    assert calls == network_before
+    assert client.delete("/library").json() == {"deleted": 0}

@@ -15,6 +15,7 @@ export default function LibraryPage() {
   const [revision, setRevision] = useState(0)
   const [data, setData] = useState<LibraryPageData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [clearing, setClearing] = useState(false)
   const [error, setError] = useState('')
   const [workRequest, setWorkRequest] = useState<WorkRequest | null>(null)
 
@@ -33,6 +34,15 @@ export default function LibraryPage() {
   function saved(item: LibraryEntry) {
     setStatus(item.status); setMediaType('all'); setQuery(''); setDraft(''); setPage(1); setRevision(n => n + 1)
   }
+  async function clearLibrary() {
+    if (!window.confirm('清空片库会移除全部想看、看过和评分记录。确认清空？')) return
+    setClearing(true); setError('')
+    try {
+      await api<{ deleted: number }>('/library', { method: 'DELETE' })
+      setQuery(''); setDraft(''); setMediaType('all'); setPage(1); setRevision(n => n + 1)
+    } catch (reason) { setError((reason as Error).message) }
+    finally { setClearing(false) }
+  }
   const count = data ? data.counts.wish + data.counts.watched : null
   const pages = data ? Math.ceil(data.total / data.page_size) : 0
   const watched = data?.counts.watched ?? 0
@@ -40,8 +50,8 @@ export default function LibraryPage() {
   return <main className="library-main">
     <section className="library-hero"><div><div className="eyebrow"><span />私人片库</div><h1>我的片库</h1><p>电影使人的寿命延长了三倍。</p></div><div className="library-hero-actions"><button className="import-button" disabled title="豆瓣记录导入即将开放"><span aria-hidden="true">↥</span>导入豆瓣记录</button><button className="primary-button" onClick={() => setWorkRequest({})}><span aria-hidden="true">＋</span>手动添加</button></div></section>
     <section className="library-workspace">
-      <section className="library-list-panel" aria-labelledby="library-list-title" aria-busy={loading}>
-        <div className="library-list-heading"><div className="library-title-row"><h2 id="library-list-title">片单</h2><span className="total-badge">共 {count ?? '—'} 部</span></div><p>按标记时间排序</p>
+      <section className="library-list-panel" aria-labelledby="library-list-title" aria-busy={loading || clearing}>
+        <div className="library-list-heading"><div className="library-title-row"><h2 id="library-list-title">片单</h2><span className="total-badge">共 {count ?? '—'} 部</span><button className="clear-library-button" disabled={loading || clearing} onClick={() => void clearLibrary()}>{clearing ? '清空中…' : '清空片库'}</button></div><p>按标记时间排序</p>
           <div className="library-tabs" role="tablist" aria-label="片库状态">{(['wish', 'watched'] as const).map(tab => <button key={tab} id={'tab-' + tab} role="tab" aria-selected={status === tab} aria-controls="library-entries" disabled={loading} className={status === tab ? 'active' : ''} onClick={() => { setStatus(tab); setPage(1) }}>{tab === 'wish' ? '想看' : '看过'}（{data ? data.counts[tab] : '—'}）</button>)}</div>
           <form className="library-filters" onSubmit={search}><label className="sr-only" htmlFor="library-query">搜索个人片库</label><div className="local-search"><input id="library-query" value={draft} disabled={loading} onChange={e => setDraft(e.target.value)} placeholder="搜索片库中的作品" /><button aria-label="搜索片库" disabled={loading}><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg></button></div><label className="sr-only" htmlFor="library-type">筛选作品类型</label><select id="library-type" value={mediaType} disabled={loading} onChange={e => { setMediaType(e.target.value as SearchType); setPage(1) }}><option value="all">全部类型</option><option value="movie">电影</option><option value="tv">剧集</option></select></form>
         </div>
