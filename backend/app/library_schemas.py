@@ -13,7 +13,9 @@ class ManualAdd(CatalogRef):
     rating: Stars | None = None
 
     @model_validator(mode="after")
-    def wish_has_no_rating(self) -> Self:
+    def check_entry(self) -> Self:
+        if self.media_type == "tv":
+            raise ValueError("剧集请按季标记，选择具体季的搜索结果。")
         if self.status == "wish" and self.rating is not None:
             raise ValueError("想看记录不填写评分。")
         return self

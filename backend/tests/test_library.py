@@ -79,7 +79,7 @@ def test_pagination_search_and_tv_filter_keep_global_counts(catalog):
     client, _, _ = catalog
     for movie_id in range(30, 45):
         add(client, "watched", tmdb_id=movie_id)
-    add(client, media_type="tv")
+    add(client, media_type="season", season_number=1)
     add(client, media_type="season", season_number=2)
     first = client.get("/library?status=watched&media_type=movie").json()
     second = client.get("/library?status=watched&media_type=movie&page=2").json()
@@ -87,7 +87,7 @@ def test_pagination_search_and_tv_filter_keep_global_counts(catalog):
     assert not {item["id"] for item in first["items"]}.intersection(item["id"] for item in second["items"])
     tv = client.get("/library?status=wish&media_type=tv&query=series").json()
     assert tv["total"] == 2 and tv["counts"] == {"wish": 2, "watched": 15}
-    assert {item["catalog"]["media_type"] for item in tv["items"]} == {"tv", "season"}
+    assert {item["catalog"]["season_number"] for item in tv["items"]} == {1, 2}
     assert client.get("/library?query=no-such-film").json()["total"] == 0
 
 
@@ -106,3 +106,23 @@ def test_library_survives_app_restart_without_tmdb_credentials(catalog, migrated
 def test_missing_library_item_returns_not_found(catalog):
     client, _, _ = catalog
     assert client.post("/library/999/watched", json={"rating": None}).status_code == 404
+
+
+def test_seasons_from_search_have_independent_statuses_and_scores(catalog):
+    client, _, _ = catalog
+    candidates = client.get("/catalog/search?query=Series&media_type=tv").json()["items"]
+    first, second = candidates[:2]
+    one = add(client, "watched", media_type=first["media_type"], season_number=first["season_number"], rating=5)
+    two = add(client, "watched", media_type=second["media_type"], season_number=second["season_number"], rating=3)
+    assert one["id"] != two["id"]
+    assert one["score"] == 10 and two["score"] == 6
+    state = client.get("/library/state", params={"media_type": "season", "tmdb_id": 1, "season_number": 0}).json()
+    assert state["status"] is None
+
+
+def test_whole_series_cannot_be_added_as_a_personal_work(catalog):
+    client, _, _ = catalog
+    for status in ["wish", "watched"]:
+        response = client.post("/library/manual", json={"media_type": "tv", "tmdb_id": 1, "status": status})
+        assert response.status_code == 422
+    assert client.get("/library").json()["counts"] == {"wish": 0, "watched": 0}

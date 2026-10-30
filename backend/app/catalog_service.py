@@ -46,7 +46,7 @@ def parse_title(title: str) -> tuple[str, int | None, int | None]:
                 season = (digits[left] if left else 1) * 10 + (digits[right] if right else 0)
             else:
                 season = digits[value]
-        title = title[:season_match.start()].strip()
+        title = title[:season_match.start()].rstrip(" ·-—:")
     return title, year, season
 
 
@@ -64,12 +64,18 @@ class CatalogService:
 
     async def search(
         self, query: str, media_type: SearchType = "all", year: int | None = None, page: int = 1,
+        *, expand_seasons: bool = True,
     ) -> SearchResult:
+        series_query, _, requested_season = parse_title(query)
         types = ["movie", "tv"] if media_type == "all" else [media_type]
+        if expand_seasons and requested_season is not None and media_type != "movie":
+            types = ["tv"]
         responses = await asyncio.gather(*[
             self.tmdb.get(
-                f"/search/{kind}", query=query.strip(), page=page,
-                include_adult="false", **({"year": year} if year is not None else {}),
+                f"/search/{kind}",
+                query=series_query if kind == "tv" and expand_seasons and requested_season is not None else query.strip(),
+                page=page, include_adult="false",
+                **({"year": year} if year is not None and (kind == "movie" or not expand_seasons) else {}),
             ) for kind in types
         ])
         poster_base = await self.tmdb.poster_base_url()
@@ -84,9 +90,27 @@ class CatalogService:
                     overview=data.get("overview") or "",
                     poster_url=poster_base + data["poster_path"] if data.get("poster_path") else None,
                 ))
-        name = normalized_name(query)
+        name = normalized_name(series_query if requested_season is not None else query)
         items.sort(key=lambda item: normalized_name(item.title) != name and normalized_name(item.original_title) != name)
+        if expand_seasons:
+            groups = await asyncio.gather(*[self.season_candidates(item) for item in items])
+            items = [item for group in groups for item in group]
+            if requested_season is not None:
+                items = [item for item in items if item.media_type == "movie" or item.season_number == requested_season]
+            if year is not None:
+                items = [item for item in items if item.year == year]
         return SearchResult(items=items, page=page, total_pages=max(r["total_pages"] for r in responses))
+
+    async def season_candidates(self, candidate: CatalogCandidate) -> list[CatalogCandidate]:
+        if candidate.media_type == "movie":
+            return [candidate]
+        series = await self.detail(candidate)
+        return [CatalogCandidate(
+            media_type="season", tmdb_id=series.tmdb_id, season_number=season.season_number,
+            title=series.title + " · " + season.name,
+            original_title=series.original_title + f" · Season {season.season_number}",
+            year=season.year, poster_url=season.poster_url,
+        ) for season in sorted(series.seasons, key=lambda s: (s.season_number == 0, s.season_number))]
 
     async def detail(self, ref: CatalogRef, refresh: bool = False) -> CatalogDetail:
         ref = CatalogRef(media_type=ref.media_type, tmdb_id=ref.tmdb_id, season_number=ref.season_number)
@@ -210,7 +234,8 @@ class CatalogService:
             return MatchResult(status="missing_data", reason="单季作品需要明确季号。")
         search_type = "tv" if is_season else body.media_type
         query_names = list(dict.fromkeys([title, *([parse_title(body.original_title)[0]] if body.original_title else [])]))
-        results = await asyncio.gather(*[self.search(name, search_type) for name in query_names])
+        # 匹配服务先识别父剧集，再核对指定季；前台搜索则直接展示每季。
+        results = await asyncio.gather(*[self.search(name, search_type, expand_seasons=False) for name in query_names])
         candidates = {item.identity_key: item for result in results for item in result.items}
         if not candidates:
             return MatchResult(status="not_found", reason="未找到候选作品。")

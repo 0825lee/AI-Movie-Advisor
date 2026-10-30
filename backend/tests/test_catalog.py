@@ -58,8 +58,8 @@ def catalog(migrated_settings):
             data = movie(movie_id)
             if movie_id == 2:
                 data.update(overview="English overview" if request.url.params["language"] == "en-US" else "", poster_path=None)
-        elif path == "/tv/1":
-            data = series()
+        elif path in ["/tv/1", "/tv/10"]:
+            data = series() if path == "/tv/1" else {**series(), "id": 10, "name": "Shared", "original_name": "Shared"}
         elif path.startswith("/tv/1/season/"):
             n = int(path.rsplit("/", 1)[-1])
             data = dict(id=100+n, name=f"第 {n} 季", season_number=n, air_date=f"{2012 if n == 2 else 2009 if n == 0 else 2010}-01-01",
@@ -86,7 +86,30 @@ def detail(client, media_type="movie", tmdb_id=1, **params):
 def test_search_keeps_movie_and_tv_with_same_id_separate(catalog):
     client, _, _ = catalog
     result = client.get("/catalog/search", params={"query": "Shared"}).json()
-    assert {(p["media_type"], p["tmdb_id"]) for p in result["items"]} == {("movie", 10), ("movie", 20), ("tv", 10)}
+    assert {(p["media_type"], p["tmdb_id"]) for p in result["items"]} == {("movie", 10), ("movie", 20), ("season", 10)}
+    assert {p["season_number"] for p in result["items"] if p["media_type"] == "season"} == {0, 1, 2}
+
+
+def test_tv_search_lists_every_season_and_reuses_series_cache(catalog):
+    client, _, calls = catalog
+    params = {"query": "Series", "media_type": "tv"}
+    result = client.get("/catalog/search", params=params).json()
+    assert [item["season_number"] for item in result["items"]] == [1, 2, 0]
+    assert all(item["media_type"] == "season" for item in result["items"])
+    assert len({(item["tmdb_id"], item["season_number"]) for item in result["items"]}) == 3
+    assert result["items"][1]["year"] == 2012
+    assert calls["/tv/1"] == 1
+    client.get("/catalog/search", params=params)
+    assert calls["/tv/1"] == 1
+    assert calls["/search/tv"] == 2  # 搜索仍走 TMDB，父剧资料复用本地缓存。
+
+
+def test_search_with_season_name_returns_that_season_directly(catalog):
+    client, _, _ = catalog
+    result = client.get("/catalog/search", params={"query": "Series · 第二季"}).json()
+    assert len(result["items"]) == 1
+    assert result["items"][0]["media_type"] == "season"
+    assert result["items"][0]["season_number"] == 2
 
 
 def test_detail_cache_refresh_and_confirmation_are_persistent(catalog, migrated_settings):

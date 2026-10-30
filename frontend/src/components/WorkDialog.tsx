@@ -64,7 +64,7 @@ export default function WorkDialog({ request, onClose, onSaved }: {
 
   return <dialog ref={dialog} className="detail-dialog work-dialog" aria-labelledby="work-dialog-title" onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === dialog.current) close() }}>
     <div className="detail-shell">
-      <div className="work-dialog-heading"><div><h2 id="work-dialog-title">{step === 'search' ? '手动添加作品' : step === 'rating' ? '标记看过' : '作品资料'}</h2><p>{step === 'search' ? '搜索并选择正确的电影、剧集或单季' : step === 'rating' ? '你的个人观影记录' : '核对作品信息，记录想看或看过'}</p></div><button className="close-button" aria-label="关闭窗口" disabled={busy} onClick={close}>×</button></div>
+      <div className="work-dialog-heading"><div><h2 id="work-dialog-title">{step === 'search' ? '手动添加作品' : step === 'rating' ? '标记看过' : '作品资料'}</h2><p>{step === 'search' ? '搜索电影或剧集，每季独立记录与评分' : step === 'rating' ? '你的个人观影记录' : '核对作品信息，记录想看或看过'}</p></div><button className="close-button" aria-label="关闭窗口" disabled={busy} onClick={close}>×</button></div>
       {error && <div className="notice error-message" role="alert">{error}{step === 'detail' && selected && !detail && <button onClick={() => void selectWork(selected)}>重试</button>}</div>}
       {notice && <div className="library-notice" role="status">✓ {notice}</div>}
       {step === 'search' && <>
@@ -75,7 +75,7 @@ export default function WorkDialog({ request, onClose, onSaved }: {
         </form>
         {busy ? <div className="dialog-empty" role="status">正在查找作品…</div> : search ? <>
           <p className="search-result-note">{search.items.length ? '选择正确的作品，同名作品请核对年份。' : '没有找到作品，试试原名或缩短关键词。'}</p>
-          <div className="work-grid">{search.items.map((item: Candidate) => <button className="work-card" key={item.media_type + ':' + item.tmdb_id} onClick={() => void selectWork(item)}>
+          <div className="work-grid">{search.items.map((item: Candidate) => <button className="work-card" key={`${item.media_type}:${item.tmdb_id}:${item.season_number}`} onClick={() => void selectWork(item)}>
             <div className="work-image"><Poster url={item.poster_url} title={item.title} /><span className="work-badge">{mediaLabel(item.media_type)}</span></div>
             <div className="work-caption"><h3>{item.title}</h3><p className="original-title">{item.original_title}</p><div className="work-meta">{item.year ?? '年份待补'}</div></div>
           </button>)}</div>
@@ -95,8 +95,6 @@ export default function WorkDialog({ request, onClose, onSaved }: {
               {detail.runtime !== null && detail.runtime > 0 && <><dt>{detail.media_type === 'movie' ? '片长' : '单集时长'}</dt><dd>{detail.runtime} 分钟</dd></>}
               {detail.episode_count !== null && <><dt>集数</dt><dd>{detail.episode_count} 集</dd></>}
             </dl>
-            {detail.media_type === 'tv' && <div className="season-picker"><label htmlFor="season-choice">选择整剧或具体季</label><select id="season-choice" value="series" disabled={busy} onChange={e => { if (e.target.value !== 'series') void selectWork({ ...reference(detail), media_type: 'season', season_number: Number(e.target.value) }) }}><option value="series">整剧</option>{detail.seasons.map(s => <option key={s.season_number} value={s.season_number}>{s.name}{s.year ? ` · ${s.year}` : ''} · {s.episode_count} 集</option>)}</select></div>}
-            {detail.media_type === 'season' && <button className="text-button back-series" disabled={busy} onClick={() => void selectWork({ ...reference(detail), media_type: 'tv', season_number: null })}>← 查看整剧及其他季</button>}
           </div></div>
           <section className="overview-section"><div className="overview-heading"><h3>剧情简介</h3>{detail.overview_language === 'en-US' && <span>英文简介</span>}</div><p>{detail.overview || '暂无简介'}</p></section>
           <div className="detail-source"><a href={detail.tmdb_url} target="_blank" rel="noreferrer">在 TMDB 查看 ↗</a><button className="text-button" disabled={busy} onClick={() => void selectWork(detail, true)}>刷新资料</button></div>

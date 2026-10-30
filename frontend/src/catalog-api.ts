@@ -38,5 +38,5 @@ export function detailPath(item: CatalogRef, refresh = false): string {
 }
 
 export function mediaLabel(type: MediaType): string {
-  return { movie: '电影', tv: '整剧', season: '单季' }[type]
+  return { movie: '电影', tv: '剧集', season: '剧集' }[type]
 }
