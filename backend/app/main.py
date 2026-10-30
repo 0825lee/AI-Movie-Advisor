@@ -14,6 +14,7 @@ from app.catalog_routes import router as catalog_router, tools_router
 from app.database import create_database_engine
 from app.dify_client import DifyClient, DifyWorkflowError, WorkflowResult
 from app.tmdb_client import TMDBClient, TMDBError
+from app.library_routes import router as library_router
 
 
 class HealthResponse(BaseModel):
@@ -49,6 +50,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = engine
     app.include_router(catalog_router)
     app.include_router(tools_router)
+    app.include_router(library_router)
 
     @app.exception_handler(TMDBError)
     async def tmdb_error_handler(request: Request, exc: TMDBError) -> JSONResponse:
