@@ -64,7 +64,7 @@ export default function WorkDialog({ request, onClose, onSaved }: {
 
   return <dialog ref={dialog} className="detail-dialog work-dialog" aria-labelledby="work-dialog-title" onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === dialog.current) close() }}>
     <div className="detail-shell">
-      <div className="work-dialog-heading"><div><h2 id="work-dialog-title">{step === 'search' ? '手动添加作品' : step === 'rating' ? '标记看过' : '作品资料'}</h2><p>{step === 'search' ? '搜索电影或剧集，每季独立记录与评分' : step === 'rating' ? '你的个人观影记录' : '核对作品信息，记录想看或看过'}</p></div><button className="close-button" aria-label="关闭窗口" disabled={busy} onClick={close}>×</button></div>
+      <div className="work-dialog-heading"><div><h2 id="work-dialog-title">{step === 'search' ? '手动添加作品' : step === 'rating' ? '标记看过' : '作品资料'}</h2><p>{step === 'search' ? '搜索电影或剧集' : step === 'rating' ? '你的个人观影记录' : '核对作品信息，记录想看或看过'}</p></div><button className="close-button" aria-label="关闭窗口" disabled={busy} onClick={close}>×</button></div>
       {error && <div className="notice error-message" role="alert">{error}{step === 'detail' && selected && !detail && <button onClick={() => void selectWork(selected)}>重试</button>}</div>}
       {notice && <div className="library-notice" role="status">✓ {notice}</div>}
       {step === 'search' && <>

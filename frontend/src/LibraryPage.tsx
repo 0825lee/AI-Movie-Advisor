@@ -48,7 +48,7 @@ export default function LibraryPage() {
         <div className="library-entries" id="library-entries" role="tabpanel" aria-labelledby={'tab-' + status}>
           {error ? <div className="library-empty"><p role="alert">{error}</p><button className="quiet-button" onClick={() => setRevision(n => n + 1)}>重新加载</button></div>
             : loading ? <div className="library-empty" role="status">正在读取片单…</div>
-            : data && data.items.length > 0 ? <><div className="list-explanation">{status === 'watched' ? '评分来自你的个人记录' : '想看的下一部，也许就在这里'}</div><ul>{data.items.map((item, index) => {
+            : data && data.items.length > 0 ? <>{status === 'wish' && <div className="list-explanation">想看的下一部，也许就在这里</div>}<ul>{data.items.map((item, index) => {
               const work = item.catalog
               const metadata = [work.year, countryNames(work), work.genres[0]?.name, work.media_type === 'movie' ? '' : mediaLabel(work.media_type)].filter(Boolean).join(' · ')
               return <li className="library-row" key={item.id}><span className="row-number">{String((page - 1) * data.page_size + index + 1).padStart(2, '0')}</span><button className="row-work" onClick={() => setWorkRequest({ entry: item })}><strong>{work.title}</strong><span>{metadata}</span></button>
@@ -64,8 +64,8 @@ export default function LibraryPage() {
         })}<button aria-label="下一页" disabled={loading || page >= pages} onClick={() => setPage(p => p + 1)}>›</button></div></div>
       </section>
       <aside className="profile-panel" aria-labelledby="profile-title">
-        <div className="eyebrow"><span />口味分析</div><h2 id="profile-title">我的观影画像</h2><p className="profile-subtitle">基于看过的影片生成</p>
-        <div className="profile-pending"><svg aria-hidden="true" width="44" height="44" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4"><rect x="8" y="8" width="32" height="32" rx="9" /><circle cx="18" cy="20" r="1" fill="currentColor" /><circle cx="30" cy="20" r="1" fill="currentColor" /><path d="M17 29c4 4 10 4 14 0" /></svg><h3>暂无观影画像</h3><p>每一次观影，都是一次新的相遇。<br />慢慢记录，也慢慢认识自己的口味。</p></div>
+        <div className="eyebrow"><span />画像构建</div><h2 id="profile-title">我的观影画像</h2><p className="profile-subtitle">基于看过的影片生成</p>
+        <div className="profile-pending"><svg aria-hidden="true" width="44" height="44" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4"><rect x="8" y="8" width="32" height="32" rx="9" /><circle cx="18" cy="20" r="1" fill="currentColor" /><circle cx="30" cy="20" r="1" fill="currentColor" /><path d="M17 29c4 4 10 4 14 0" /></svg><h3>暂无观影画像</h3></div>
         <div className="profile-records"><div><span>已记录看过</span><strong>{data ? watched : '—'}<small> 部</small></strong></div><span className="profile-record-icon" aria-hidden="true">▤</span></div>
         <div className="profile-progress"><div><span>观影记录积累</span><span>{data ? `${watched} / 50` : '—'}</span></div><progress max="50" value={Math.min(watched, 50)} aria-label="距首份画像所需的观影记录" /><p>{!data ? '读取观影记录后显示进度' : watched < 50 ? `再记录 ${50 - watched} 部看过的作品，积累首份画像所需的记录。` : '已积累首份画像所需的观影记录，画像尚未生成。'}</p></div>
         <div className="profile-summary-empty"><span>口味总结</span><p>你的观影故事，留待这里慢慢展开。</p></div>
