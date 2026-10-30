@@ -16,7 +16,7 @@ class UserItem(Base):
     catalog_item_id: Mapped[int] = mapped_column(ForeignKey("catalog_items.id"), unique=True)
     status: Mapped[str] = mapped_column(String)
     rating: Mapped[int | None] = mapped_column(Integer)
-    marked_at: Mapped[int] = mapped_column(Integer)
+    marked_at: Mapped[int | None] = mapped_column(Integer)
     source: Mapped[str] = mapped_column(String)
     created_at: Mapped[int] = mapped_column(Integer)
     updated_at: Mapped[int] = mapped_column(Integer)

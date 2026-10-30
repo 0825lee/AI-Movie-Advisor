@@ -12,7 +12,7 @@ export type LibraryEntry = {
   status: LibraryStatus
   rating: number | null
   score: number | null
-  marked_at: number
+  marked_at: number | null
   source: string
   catalog: Detail
 }

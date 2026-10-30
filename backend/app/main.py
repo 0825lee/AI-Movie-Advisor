@@ -15,6 +15,9 @@ from app.database import create_database_engine
 from app.dify_client import DifyClient, DifyWorkflowError, WorkflowResult
 from app.tmdb_client import TMDBClient, TMDBError
 from app.library_routes import router as library_router
+from app.catalog_service import CatalogService
+from app.import_service import ImportRunner
+from app.import_routes import router as import_router
 
 
 class HealthResponse(BaseModel):
@@ -42,7 +45,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ) as http:
             app.state.http = http
             app.state.tmdb = TMDBClient(http, settings)
+            app.state.import_runner = ImportRunner(engine, CatalogService(engine, app.state.tmdb))
             yield
+            await app.state.import_runner.close()
         engine.dispose()
 
     app = FastAPI(title="AI Movie Advisor", version="0.1.0", lifespan=lifespan)
@@ -51,6 +56,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(catalog_router)
     app.include_router(tools_router)
     app.include_router(library_router)
+    app.include_router(import_router)
 
     @app.exception_handler(TMDBError)
     async def tmdb_error_handler(request: Request, exc: TMDBError) -> JSONResponse:

@@ -37,7 +37,7 @@ class LibraryEntry(BaseModel):
     status: LibraryStatus
     rating: int | None
     score: int | None
-    marked_at: int
+    marked_at: int | None
     source: str
     catalog: CatalogDetail
 

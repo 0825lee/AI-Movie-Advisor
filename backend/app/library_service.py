@@ -1,7 +1,7 @@
 import time
 
 from fastapi import HTTPException
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,7 @@ from app.catalog_models import CatalogItem
 from app.catalog_schemas import CatalogRef, SearchType
 from app.catalog_service import CatalogService, serialized
 from app.library_models import UserItem
+from app.import_models import ImportJob
 from app.library_schemas import LibraryCounts, LibraryEntry, LibraryPage, LibraryState, LibraryStatus, ManualAdd
 
 
@@ -18,6 +19,30 @@ def entry(item: UserItem, work: CatalogItem) -> LibraryEntry:
         score=item.rating * 2 if item.rating is not None else None,
         marked_at=item.marked_at, source=item.source, catalog=serialized(work),
     )
+
+
+def save_item(
+    session: Session, catalog_item_id: int, status: str, rating: int | None,
+    marked_at: int | None, source: str,
+) -> tuple[UserItem, str]:
+    now = int(time.time())
+    item = session.scalar(select(UserItem).where(UserItem.catalog_item_id == catalog_item_id))
+    outcome = "duplicate"
+    if item is None:
+        item = UserItem(
+            catalog_item_id=catalog_item_id, status=status, rating=rating,
+            marked_at=marked_at, source=source, created_at=now, updated_at=now,
+        )
+        session.add(item)
+        outcome = "added"
+    elif item.status == "wish" and status == "watched":
+        item.status = status
+        item.rating = rating
+        item.marked_at = marked_at
+        item.updated_at = now
+        item.source = source
+        outcome = "upgraded"
+    return item, outcome
 
 
 class LibraryService:
@@ -38,6 +63,9 @@ class LibraryService:
     def clear(self) -> int:
         with Session(self.engine) as session:
             result = session.execute(delete(UserItem))
+            session.execute(update(ImportJob).where(ImportJob.status.in_(["running", "paused"])).values(
+                status="cancelled", message="片库已清空，请重新选择文件导入。", updated_at=int(time.time()),
+            ))
             session.commit()
             return result.rowcount
 
@@ -56,7 +84,7 @@ class LibraryService:
                 ))
             total = session.scalar(select(func.count()).select_from(UserItem).join(CatalogItem).where(*conditions))
             rows = session.execute(select(UserItem, CatalogItem).join(CatalogItem).where(*conditions).order_by(
-                UserItem.marked_at.desc(), UserItem.id.desc(),
+                func.coalesce(UserItem.marked_at, UserItem.created_at).desc(), UserItem.id.desc(),
             ).offset((page - 1) * 12).limit(12)).all()
             return LibraryPage(
                 items=[entry(item, work) for item, work in rows],
@@ -66,21 +94,9 @@ class LibraryService:
     async def add(self, body: ManualAdd) -> LibraryEntry:
         # 先解析作品，网络请求不放在片库写事务中。
         detail = await self.catalog.detail(body)
-        now = int(time.time())
         with Session(self.engine) as session:
             work = session.get(CatalogItem, detail.catalog_id)
-            item = session.scalar(select(UserItem).where(UserItem.catalog_item_id == work.id))
-            if item is None:
-                item = UserItem(
-                    catalog_item_id=work.id, status=body.status, rating=body.rating,
-                    marked_at=now, source="manual", created_at=now, updated_at=now,
-                )
-                session.add(item)
-            elif item.status == "wish" and body.status == "watched":
-                item.status = "watched"
-                item.rating = body.rating
-                item.marked_at = now
-                item.updated_at = now
+            item, _ = save_item(session, work.id, body.status, body.rating, int(time.time()), "manual")
             session.commit()
             return entry(item, work)
 

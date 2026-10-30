@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { api, mediaLabel } from './catalog-api'
 import type { SearchType } from './catalog-api'
 import { countryNames } from './library-api'
 import type { LibraryEntry, LibraryPageData, LibraryStatus, WorkRequest } from './library-api'
 import WorkDialog from './components/WorkDialog'
+import ImportDialog from './components/ImportDialog'
 
 export default function LibraryPage() {
   const [status, setStatus] = useState<LibraryStatus>('watched')
@@ -18,6 +19,9 @@ export default function LibraryPage() {
   const [clearing, setClearing] = useState(false)
   const [error, setError] = useState('')
   const [workRequest, setWorkRequest] = useState<WorkRequest | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
+  const [importRunning, setImportRunning] = useState(false)
+  const importChanged = useCallback(() => setRevision(n => n + 1), [])
 
   useEffect(() => {
     let active = true
@@ -48,10 +52,10 @@ export default function LibraryPage() {
   const watched = data?.counts.watched ?? 0
 
   return <main className="library-main">
-    <section className="library-hero"><div><div className="eyebrow"><span />私人片库</div><h1>我的片库</h1><p>电影使人的寿命延长了三倍。</p></div><div className="library-hero-actions"><button className="import-button" disabled title="豆瓣记录导入即将开放"><span aria-hidden="true">↥</span>导入豆瓣记录</button><button className="primary-button" onClick={() => setWorkRequest({})}><span aria-hidden="true">＋</span>手动添加</button></div></section>
+    <section className="library-hero"><div><div className="eyebrow"><span />私人片库</div><h1>我的片库</h1><p>电影使人的寿命延长了三倍。</p></div><div className="library-hero-actions"><button className="import-button" onClick={() => setImportOpen(true)}><span aria-hidden="true">↥</span>{importRunning ? '导入中…' : '导入豆瓣记录'}</button><button className="primary-button" disabled={importRunning} onClick={() => setWorkRequest({})}><span aria-hidden="true">＋</span>手动添加</button></div></section>
     <section className="library-workspace">
       <section className="library-list-panel" aria-labelledby="library-list-title" aria-busy={loading || clearing}>
-        <div className="library-list-heading"><div className="library-title-row"><h2 id="library-list-title">片单</h2><span className="total-badge">共 {count ?? '—'} 部</span><button className="clear-library-button" disabled={loading || clearing} onClick={() => void clearLibrary()}>{clearing ? '清空中…' : '清空片库'}</button></div><p>按标记时间排序</p>
+        <div className="library-list-heading"><div className="library-title-row"><h2 id="library-list-title">片单</h2><span className="total-badge">共 {count ?? '—'} 部</span><button className="clear-library-button" disabled={loading || clearing || importRunning} onClick={() => void clearLibrary()}>{clearing ? '清空中…' : '清空片库'}</button></div><p>按标记时间排序</p>
           <div className="library-tabs" role="tablist" aria-label="片库状态">{(['wish', 'watched'] as const).map(tab => <button key={tab} id={'tab-' + tab} role="tab" aria-selected={status === tab} aria-controls="library-entries" disabled={loading} className={status === tab ? 'active' : ''} onClick={() => { setStatus(tab); setPage(1) }}>{tab === 'wish' ? '想看' : '看过'}（{data ? data.counts[tab] : '—'}）</button>)}</div>
           <form className="library-filters" onSubmit={search}><label className="sr-only" htmlFor="library-query">搜索个人片库</label><div className="local-search"><input id="library-query" value={draft} disabled={loading} onChange={e => setDraft(e.target.value)} placeholder="搜索片库中的作品" /><button aria-label="搜索片库" disabled={loading}><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg></button></div><label className="sr-only" htmlFor="library-type">筛选作品类型</label><select id="library-type" value={mediaType} disabled={loading} onChange={e => { setMediaType(e.target.value as SearchType); setPage(1) }}><option value="all">全部类型</option><option value="movie">电影</option><option value="tv">剧集</option></select></form>
         </div>
@@ -62,11 +66,11 @@ export default function LibraryPage() {
               const work = item.catalog
               const metadata = [work.year, countryNames(work), work.genres[0]?.name, work.media_type === 'movie' ? '' : mediaLabel(work.media_type)].filter(Boolean).join(' · ')
               return <li className="library-row" key={item.id}><span className="row-number">{String((page - 1) * data.page_size + index + 1).padStart(2, '0')}</span><button className="row-work" onClick={() => setWorkRequest({ entry: item })}><strong>{work.title}</strong><span>{metadata}</span></button>
-                {status === 'wish' ? <button className="mark-watched-button" onClick={() => setWorkRequest({ entry: item, startRating: true })}><span aria-hidden="true">✓</span>标记看过</button>
+                {status === 'wish' ? <button className="mark-watched-button" disabled={importRunning} onClick={() => setWorkRequest({ entry: item, startRating: true })}><span aria-hidden="true">✓</span>标记看过</button>
                   : item.rating === null ? <span className="unrated">未评分</span> : <div className="row-rating" aria-label={`${item.rating} 星，${item.score} 分`}><span className="row-stars" aria-hidden="true">{'★'.repeat(item.rating)}<i>{'★'.repeat(5 - item.rating)}</i></span><span>{item.score} <small>分</small></span></div>}
               </li>
             })}</ul></>
-            : <div className="library-empty"><span className="empty-film" aria-hidden="true">▤</span><h3>{query || mediaType !== 'all' ? '没有找到匹配的记录' : status === 'wish' ? '收藏下一部想看的作品' : '记录你的第一部看过'}</h3><p>{query || mediaType !== 'all' ? '试试其他片名，或切换作品类型。' : '从手动添加开始，建立属于你的片库。'}</p>{!query && mediaType === 'all' && <button className="quiet-button" onClick={() => setWorkRequest({})}>＋ 手动添加</button>}</div>}
+            : <div className="library-empty"><span className="empty-film" aria-hidden="true">▤</span><h3>{query || mediaType !== 'all' ? '没有找到匹配的记录' : status === 'wish' ? '收藏下一部想看的作品' : '记录你的第一部看过'}</h3><p>{query || mediaType !== 'all' ? '试试其他片名，或切换作品类型。' : '从手动添加或导入开始，建立属于你的片库。'}</p>{!query && mediaType === 'all' && <button className="quiet-button" disabled={importRunning} onClick={() => setWorkRequest({})}>＋ 手动添加</button>}</div>}
         </div>
         <div className="library-pagination"><span>{data && data.total > 0 ? `${(page - 1) * data.page_size + 1}–${Math.min(page * data.page_size, data.total)} / ${data.total}` : '0 / 0'}</span><div><button aria-label="上一页" disabled={loading || page <= 1} onClick={() => setPage(p => p - 1)}>‹</button>{Array.from({ length: Math.min(pages, 5) }, (_, i) => {
           const n = Math.max(1, Math.min(page - 2, pages - 4)) + i
@@ -83,5 +87,6 @@ export default function LibraryPage() {
       </aside>
     </section>
     {workRequest && <WorkDialog request={workRequest} onClose={() => setWorkRequest(null)} onSaved={saved} />}
+    <ImportDialog open={importOpen} libraryCount={count ?? 0} onClose={() => setImportOpen(false)} onChanged={importChanged} onRunningChange={setImportRunning} />
   </main>
 }

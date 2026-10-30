@@ -18,6 +18,10 @@ def get_library(request: Request, catalog: Annotated[CatalogService, Depends(get
 Service = Annotated[LibraryService, Depends(get_library)]
 
 
+def require_idle_import(request: Request) -> None:
+    request.app.state.import_runner.ensure_idle()
+
+
 @router.get("", response_model=LibraryPage)
 def list_library(
     service: Service, status: LibraryStatus = "watched", media_type: SearchType = "all",
@@ -31,17 +35,17 @@ def get_library_state(ref: Annotated[CatalogRef, Query()], service: Service) -> 
     return service.state(ref)
 
 
-@router.delete("", response_model=ClearLibraryResult)
+@router.delete("", response_model=ClearLibraryResult, dependencies=[Depends(require_idle_import)])
 def clear_library(service: Service) -> ClearLibraryResult:
     """清空想看、看过及个人评分，保留作品资料缓存。"""
     return ClearLibraryResult(deleted=service.clear())
 
 
-@router.post("/manual", response_model=LibraryEntry)
+@router.post("/manual", response_model=LibraryEntry, dependencies=[Depends(require_idle_import)])
 async def add_manual(body: ManualAdd, service: Service) -> LibraryEntry:
     return await service.add(body)
 
 
-@router.post("/{item_id}/watched", response_model=LibraryEntry)
+@router.post("/{item_id}/watched", response_model=LibraryEntry, dependencies=[Depends(require_idle_import)])
 def mark_watched(item_id: int, body: MarkWatched, service: Service) -> LibraryEntry:
     return service.mark_watched(item_id, body.rating)
