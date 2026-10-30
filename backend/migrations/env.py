@@ -1,5 +1,6 @@
 from alembic import context
 
+from app import catalog_models  # noqa: F401 -- register Alembic metadata
 from app.config import Settings
 from app.database import Base, create_database_engine, database_url
 

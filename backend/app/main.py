@@ -1,19 +1,19 @@
-import secrets
 from contextlib import asynccontextmanager
-from typing import Annotated, Any, Literal
+from typing import Any, Literal
 
 import httpx
-from fastapi import Depends, FastAPI, HTTPException, Request, Security
-from fastapi.security import APIKeyHeader
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import Settings
+from app.auth import require_internal_token
+from app.catalog_routes import router as catalog_router, tools_router
 from app.database import create_database_engine
 from app.dify_client import DifyClient, DifyWorkflowError, WorkflowResult
-
-internal_header = APIKeyHeader(name="X-Internal-Token", auto_error=False)
+from app.tmdb_client import TMDBClient, TMDBError
 
 
 class HealthResponse(BaseModel):
@@ -40,19 +40,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             timeout=httpx.Timeout(settings.dify_timeout_seconds, connect=10)
         ) as http:
             app.state.http = http
+            app.state.tmdb = TMDBClient(http, settings)
             yield
         engine.dispose()
 
     app = FastAPI(title="AI Movie Advisor", version="0.1.0", lifespan=lifespan)
+    app.state.settings = settings
+    app.state.engine = engine
+    app.include_router(catalog_router)
+    app.include_router(tools_router)
 
-    def require_internal_token(
-        token: Annotated[str | None, Security(internal_header)],
-    ) -> None:
-        expected = settings.movie_internal_token
-        if expected is None:
-            raise HTTPException(503, "请先在 backend/.env 配置 MOVIE_INTERNAL_TOKEN。")
-        if token is None or not secrets.compare_digest(token, expected.get_secret_value()):
-            raise HTTPException(401, "内部接口令牌无效。")
+    @app.exception_handler(TMDBError)
+    async def tmdb_error_handler(request: Request, exc: TMDBError) -> JSONResponse:
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 
     @app.get("/health", response_model=HealthResponse)
     def health() -> HealthResponse:

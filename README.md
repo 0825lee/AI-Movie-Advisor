@@ -2,12 +2,12 @@
 
 基于 React、FastAPI、SQLite 和 Dify 的本地电影推荐项目。
 
-当前完成 **1.7 最小正式工程**：健康状态页面、SQLite 迁移基础、内部认证检查和 Dify SSE 客户端。片库、导入、画像与推荐按后续模块实现。
+当前完成 **最小正式工程与模块 2：作品资料与身份匹配**。支持电影、整剧和单季的真实搜索、详情预览、确认保存、资料缓存与来源映射，保留健康状态页面、内部认证和 Dify SSE 客户端。想看／看过、评分、导入、画像与推荐按后续模块实现。
 
 ## 目录
 
 - frontend：React＋TypeScript＋Vite。
-- backend：FastAPI、SQLite、Alembic、Dify 客户端与测试。
+- backend：FastAPI、SQLite、Alembic、TMDB／Dify 客户端、作品匹配与测试。
 - ai-movie-advisor：保留的墨刀 HTML 原型。
 - 开发执行计划.md、模块开发执行指引.md：仅保留在本地的产品规则与后续模块文档，不纳入 Git。
 
@@ -44,7 +44,7 @@ cd D:/movie-agent/backend
 
 仓库默认后端端口为 8000。本机实测 8000 被 Windows 保留，因此本机 backend/.env 已使用 BACKEND_PORT=18000，frontend/.env.local 已使用 VITE_BACKEND_URL=http://127.0.0.1:18000。这两个文件都不提交 Git。本机接口地址为 http://localhost:18000/docs；其他机器可以使用默认值，只需两边地址一致。
 
-初始迁移 0001 建立 Alembic 版本基线，作品与片库表从模块 2 加入。应用不会用 create_all 自动建表；未迁移时 /health 返回 503。
+初始迁移 0001 建立 Alembic 版本基线；0002 建立 catalog_items 作品缓存与 source_mappings 来源映射。升级已有工程时也需执行 alembic upgrade head。个人片库表在模块 3 建立。应用不会用 create_all 自动建表；未迁移时 /health 返回 503。
 
 ## 启动前端
 
@@ -57,7 +57,33 @@ npm run dev
 
 打开 http://localhost:5173。开发服务器把 /api 请求转发至 VITE_BACKEND_URL，默认本机 8000，当前机器为 18000；浏览器不需要额外 CORS 配置。
 
-页面实际读取后端和数据库状态。Dify／TMDB 只显示凭据是否填写，不代表外部调用成功。停止后端再点击“重新检查”，页面会显示真实连接错误。
+首页为“发现作品”，支持按名称、可选年份和电影／剧集类型搜索。选择候选查看详情；整剧详情中可切换具体季，确认后出现在“已确认作品”中。确认的是作品资料，不会标为想看或看过。
+
+“服务状态”页实际读取后端和数据库状态。Dify／TMDB 在该页只显示凭据是否填写，不代表外部调用成功。
+
+## 作品资料与匹配
+
+- 电影、整剧、单季分别用 movie:ID、tv:ID、season:剧集ID:季号确定身份；支持季号 0（特别篇）。
+- 详情存入 SQLite，缓存 7 天；查看详情不会自动确认。刷新资料会重新请求 TMDB，保留已有确认状态。
+- 中文简介缺失时尝试英文，均缺失时保留空值；缺海报或图片加载失败时显示占位。
+- 导演、主创与演员保存 TMDB 人物 ID；主要演员按 TMDB 顺序保留前两位。主创与导演分别展示。
+- 匹配优先复用来源映射，再核对名称、原名或已知别名、年份、类型与季号；结果分为 matched、ambiguous、missing_data、not_found。单季核对该季年份，不用整剧首播年份替代。
+- TMDB 调用使用 20 秒超时，不自动重试；网络错误、找不到作品、限流分别返回明确状态。
+- 本模块不搭建新的 Dify 工作流。测试接口或调用只读工具可能写入公共资料缓存，不修改个人观看状态。
+
+后端接口（浏览器通过 /api 前缀代理）：
+
+| 方法 | 路径 | 用途 |
+|---|---|---|
+| GET | /catalog/search | query、media_type=all/movie/tv、可选 year、page |
+| GET | /catalog/details | media_type=movie/tv/season、tmdb_id、单季 season_number；refresh=true 更新缓存 |
+| POST | /catalog/confirm | 确认作品，可附带 source 来源映射；重复确认不新增 |
+| GET | /catalog/items | 已确认作品，page 分页，每页 24 条 |
+| POST | /catalog/match | title、可选 original_title/year/media_type/season_number/source |
+| GET | /internal/movies/search | 受认证保护的电影搜索，operationId=search_movies |
+| GET | /internal/movies/{tmdb_id} | 受认证保护的电影详情，operationId=get_movie_details |
+
+详细模型、工具输入输出和 X-Internal-Token 认证定义见运行中的 /openapi.json。电影工具留待后续模块注册到 Dify。
 
 ## 填写服务端配置
 
@@ -112,7 +138,9 @@ cd ../frontend
 npm run build
 ~~~
 
-测试使用独立临时 SQLite 和模拟 HTTP 流，覆盖真实迁移、内部认证、SSE 分块／UTF-8／失败与中断；不调用真实模型或产生模型费用。真实 Dify 联调需填写本机 Key 后执行内部检查。
+29 项测试使用独立临时 SQLite 和模拟 HTTP，覆盖迁移、内部认证、SSE、作品身份、单季年份、资料缓存、确认持久化、来源映射和匹配歧义；不调用真实模型或产生模型费用。真实 Dify 联调需填写本机 Key 后执行内部检查。
+
+模块 2 已用真实 TMDB 验证《盗梦空间》搜索／详情／海报、两版《沙丘》按年份区分、《权力的游戏》整剧及前两季、重复确认和重建应用后的持久化。真实验收使用独立本地数据库，不写入个人片库。浏览器自动化因无法可靠识别当前网址而停止，页面目视验收尚未完成。
 
 ## Git
 
