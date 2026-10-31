@@ -76,6 +76,17 @@ def season_presentation(series: dict, season_number: int, season_name: str) -> d
     )
 
 
+def work_match_keys(data: dict) -> list[str]:
+    years = data.get("release_years") or [data["year"]]
+    seasons = [data.get("season_number")]
+    if data.get("single_season"):
+        seasons.append(None)
+    return list(dict.fromkeys(
+        key for year in years for season in seasons
+        if (key := name_year_key(data["original_title"], data["title"], year, season)) is not None
+    ))
+
+
 class CatalogService:
     def __init__(self, engine: Engine, tmdb: TMDBClient):
         self.engine = engine
@@ -139,6 +150,7 @@ class CatalogService:
 
         # 远程请求完成后再打开写事务。
         data = await self.fetch_detail(ref)
+        data["match_keys"] = work_match_keys(data)
         values = dict(
             identity_key=ref.identity_key, media_type=ref.media_type,
             tmdb_id=ref.tmdb_id, season_number=ref.season_number,

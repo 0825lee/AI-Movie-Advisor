@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.catalog_models import CatalogItem
 from app.catalog_schemas import CatalogRef, SearchType
-from app.catalog_service import CatalogService, name_year_key
+from app.catalog_service import CatalogService, work_match_keys
 from app.library_models import UserItem
 from app.import_models import ImportJob
 from app.library_schemas import LibraryCounts, LibraryEntry, LibraryPage, LibraryState, LibraryStatus, LibraryWork, ManualAdd
@@ -27,11 +27,11 @@ def entry(item: UserItem, work: CatalogItem) -> LibraryEntry:
 
 def find_item(session: Session, work: CatalogItem) -> UserItem | None:
     conditions = [UserItem.catalog_item_id == work.id]
-    if work.match_key is not None:
-        keys = [work.match_key]
-        if work.details.get("single_season"):
-            keys.append(name_year_key(work.original_title, work.title, work.year, work.season_number))
+    keys = work.details.get("match_keys") or work_match_keys(work.details)
+    if keys:
         conditions.append(CatalogItem.match_key.in_(keys))
+        aliases = func.json_each(CatalogItem.details["match_keys"]).table_valued("value")
+        conditions.append(select(1).select_from(aliases).where(aliases.c.value.in_(keys)).exists())
     return session.scalar(select(UserItem).join(CatalogItem).where(or_(*conditions)).order_by(
         (UserItem.status == "watched").desc(), UserItem.id,
     ).limit(1))

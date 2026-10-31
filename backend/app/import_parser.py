@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.catalog_service import parse_title
-from app.douban_metadata import parse_info
+from app.douban_metadata import parse_info, release_years
 
 IMPORT_FIELDS = ("title", "originalTitle", "info", "status", "stars", "markedAt", "subjectId", "url")
 SHANGHAI = timezone(timedelta(hours=8))
@@ -35,10 +35,12 @@ def parse_record(data: dict[str, Any]) -> ImportRecord:
     marked_at = None
     if data.get("markedAt"):
         marked_at = int(datetime.fromisoformat(data["markedAt"]).replace(tzinfo=SHANGHAI).timestamp())
+    metadata = parse_info(data.get("info") or "", title)
+    metadata["release_years"] = release_years(data.get("info") or "", year)
     return ImportRecord(
         title=title, original_title=original, year=year,
         season_number=title_season if title_season is not None else original_season,
         status=status, rating=data.get("stars") if status == "watched" else None,
         marked_at=marked_at, source_id=str(data["subjectId"]), source_url=data.get("url") or None,
-        metadata=parse_info(data.get("info") or "", title),
+        metadata=metadata,
     )

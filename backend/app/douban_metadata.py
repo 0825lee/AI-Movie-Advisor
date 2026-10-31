@@ -11,6 +11,17 @@ RUNTIME = re.compile(r"^(\d+)\s*分钟")
 WEBSITE = re.compile(r"(?:https?://|www\.|[a-z0-9-]+\.[a-z]{2,}(?:/|$))", re.I)
 
 
+def release_years(info: str, primary_year: int | None = None) -> list[int]:
+    years = []
+    for part in info.split(" / "):
+        if not DATE.fullmatch(part.strip()):
+            break
+        years.append(int(part.strip()[:4]))
+    if primary_year is not None:
+        years.append(primary_year)
+    return list(dict.fromkeys(years))
+
+
 def parse_info(info: str, title: str) -> dict:
     parts = [part.strip() for part in info.split(" / ") if part.strip()]
     base_title, _, _ = parse_title(title)
@@ -31,7 +42,7 @@ def parse_info(info: str, title: str) -> dict:
                      if part not in titles and not DATE.match(part) and not WEBSITE.search(part)]
     runtime = int(RUNTIME.match(parts[runtime_index])[1]) if runtime_index < len(parts) else None
     return dict(
-        info=info, runtime=runtime,
+        info=info, runtime=runtime, release_years=release_years(info),
         genres=[{"name": part} for part in dict.fromkeys(parts) if part in GENRES],
         countries=[{"name": name} for name in countries],
         directors=[{"name": name} for name in directors],

@@ -13,7 +13,7 @@ def test_health_reads_actual_migrated_database(migrated_settings):
     assert response.json() == {
         "status": "ok",
         "database": "ok",
-        "database_revision": "0006",
+        "database_revision": "0007",
         "dify_configured": False,
         "tmdb_configured": False,
     }
@@ -62,4 +62,4 @@ def test_migration_can_downgrade_and_upgrade(migrated_settings):
         assert client.get("/health").status_code == 503
     command.upgrade(config, "head")
     with TestClient(create_app(migrated_settings)) as client:
-        assert client.get("/health").json()["database_revision"] == "0006"
+        assert client.get("/health").json()["database_revision"] == "0007"

@@ -8,7 +8,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from app.catalog_models import CatalogItem
-from app.catalog_service import name_year_key
+from app.catalog_service import name_year_key, work_match_keys
 from app.import_models import ImportJob, ImportRow
 from app.import_parser import IMPORT_FIELDS, parse_record
 from app.import_schemas import ImportCounts, ImportRequest, ImportRowResult, ImportRowsPage, ImportSummary
@@ -156,6 +156,7 @@ class ImportRunner:
             douban_id=record.source_id,
             douban_url=record.source_url or f"https://movie.douban.com/subject/{record.source_id}/",
         )
+        details["match_keys"] = work_match_keys(details)
         with Session(self.engine) as session:
             identity = f"douban:{record.source_id}"
             work = session.scalar(select(CatalogItem).where(CatalogItem.identity_key == identity))
