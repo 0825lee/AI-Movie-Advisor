@@ -34,6 +34,12 @@ def series():
     )
 
 
+def solo():
+    data = series()
+    return {**data, "id": 2, "name": "Solo", "original_name": "Solo",
+            "seasons": [s for s in data["seasons"] if s["season_number"] in [0, 1]]}
+
+
 @pytest.fixture
 def catalog(migrated_settings):
     calls = Counter()
@@ -50,7 +56,7 @@ def catalog(migrated_settings):
             if path == "/search/movie":
                 data = {"results": [movie()] if "alpha" in query else [movie(10, "Shared", 2010), movie(20, "Shared", 2020)] if query == "shared" else []}
             else:
-                data = {"results": [series()] if query == "series" else [{**series(), "id": 10, "name": "Shared", "original_name": "Shared"}] if query == "shared" else []}
+                data = {"results": [solo()] if query == "solo" else [series()] if query == "series" else [{**series(), "id": 10, "name": "Shared", "original_name": "Shared"}] if query == "shared" else []}
             data["total_pages"] = 1 if data["results"] else 0
         elif path.startswith("/movie/"):
             movie_id = int(path.rsplit("/", 1)[-1])
@@ -59,9 +65,11 @@ def catalog(migrated_settings):
             data = movie(movie_id)
             if movie_id == 2:
                 data.update(overview="English overview" if request.url.params["language"] == "en-US" else "", poster_path=None)
+        elif path == "/tv/2":
+            data = solo()
         elif path in ["/tv/1", "/tv/10"]:
             data = series() if path == "/tv/1" else {**series(), "id": 10, "name": "Shared", "original_name": "Shared"}
-        elif path.startswith("/tv/1/season/"):
+        elif path.startswith(("/tv/1/season/", "/tv/2/season/")):
             n = int(path.rsplit("/", 1)[-1])
             data = dict(id=100+n, name=f"第 {n} 季", season_number=n, air_date=f"{2012 if n == 2 else 2009 if n == 0 else 2010}-01-01",
                         overview="本季简介", poster_path=None, episodes=[{"id": 1}],

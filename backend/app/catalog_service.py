@@ -66,6 +66,16 @@ def name_year_key(original_title: str, title: str, year: int | None, season_numb
     return key if season is None else f"{key}:season:{season}"
 
 
+def season_presentation(series: dict, season_number: int, season_name: str) -> dict:
+    single = season_number > 0 and sum(s["season_number"] > 0 for s in series["seasons"]) == 1
+    return dict(
+        single_season=single,
+        title=series["title"] if single else series["title"] + " · " + season_name,
+        original_title=series["original_title"] if single else series["original_title"] + f" · Season {season_number}",
+        tmdb_url=series["tmdb_url"] if single else f"https://www.themoviedb.org/tv/{series['tmdb_id']}/season/{season_number}",
+    )
+
+
 class CatalogService:
     def __init__(self, engine: Engine, tmdb: TMDBClient):
         self.engine = engine
@@ -116,8 +126,7 @@ class CatalogService:
         series = await self.detail(candidate)
         return [CatalogCandidate(
             media_type="season", tmdb_id=series.tmdb_id, season_number=season.season_number,
-            title=series.title + " · " + season.name,
-            original_title=series.original_title + f" · Season {season.season_number}",
+            **season_presentation(series.model_dump(), season.season_number, season.name),
             year=season.year, poster_url=season.poster_url,
         ) for season in sorted(series.seasons, key=lambda s: (s.season_number == 0, s.season_number))]
 
@@ -134,7 +143,7 @@ class CatalogService:
             identity_key=ref.identity_key, media_type=ref.media_type,
             tmdb_id=ref.tmdb_id, season_number=ref.season_number,
             title=data["title"], original_title=data["original_title"], year=data["year"],
-            match_key=name_year_key(data["original_title"], data["title"], data["year"], ref.season_number),
+            match_key=name_year_key(data["original_title"], data["title"], data["year"], None if data.get("single_season") else ref.season_number),
             details=data, fetched_at=int(time.time()),
         )
         statement = insert(CatalogItem).values(**values).on_conflict_do_update(
@@ -174,9 +183,10 @@ class CatalogService:
         ]
         title = data["title"] if is_movie else data["name"]
         original_title = data["original_title"] if is_movie else data.get("original_name", "")
+        presentation = {}
         if is_season:
-            title = parent.title + " · " + title
-            original_title = parent.original_title + f" · Season {ref.season_number}"
+            presentation = season_presentation(parent.model_dump(), ref.season_number, title)
+            title, original_title = presentation["title"], presentation["original_title"]
         aliases = data.get("alternative_titles", {})
         return dict(
             **ref.model_dump(), title=title, original_title=original_title,
@@ -197,7 +207,8 @@ class CatalogService:
             ) for season in data.get("seasons", [])],
             episode_count=len(data["episodes"]) if is_season else data.get("number_of_episodes"),
             alternative_titles=[a["title"] for a in aliases.get("titles", aliases.get("results", []))],
-            tmdb_url=f"https://www.themoviedb.org{path}",
+            tmdb_url=presentation.get("tmdb_url", f"https://www.themoviedb.org{path}"),
+            single_season=presentation.get("single_season", False),
         )
 
     async def confirm(self, body: ConfirmRequest) -> CatalogDetail:
