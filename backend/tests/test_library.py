@@ -24,7 +24,7 @@ def test_wish_is_unique_and_state_is_read_from_database(catalog):
     assert first["rating"] is None and first["score"] is None
     assert add(client)["id"] == first["id"]
     assert client.get("/library/state", params=params).json() == {
-        "item_id": first["id"], "status": "wish", "rating": None, "score": None,
+        "item_id": first["id"], "status": "wish", "rating": None, "score": None, "comment": "",
     }
     page = client.get("/library?status=wish").json()
     assert page["total"] == 1 and page["counts"] == {"wish": 1, "watched": 0}

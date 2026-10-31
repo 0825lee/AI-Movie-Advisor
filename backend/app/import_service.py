@@ -14,6 +14,7 @@ from app.import_parser import IMPORT_FIELDS, parse_record
 from app.import_schemas import ImportCounts, ImportRequest, ImportRowResult, ImportRowsPage, ImportSummary
 from app.library_models import UserItem
 from app.library_service import save_item
+from app.profile_records import sync_profile_record
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +171,8 @@ class ImportRunner:
             work.details, work.fetched_at = details, now
             session.flush()
             item, outcome = save_item(session, work.id, record.status, record.rating, record.marked_at, "douban")
+            if outcome != "duplicate":
+                sync_profile_record(session, item, work, raw=payload)
             row = session.get(ImportRow, row_id)
             row.outcome = outcome
             row.message = {"added": "已导入", "duplicate": "记录已存在。", "upgraded": "想看已更新为看过。"}[outcome]

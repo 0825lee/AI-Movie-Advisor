@@ -48,6 +48,20 @@ body { background: #eeeff1; }
 .library-row:hover { background: #fafafa; }
 .row-number { width: 27px; flex-shrink: 0; color: #b4b4bc; text-align: center; font: 10.5px ui-monospace, monospace; letter-spacing: .05em; }
 .row-work { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; text-decoration: none; }
+.comment-trigger { border: 0; background: none; cursor: pointer; padding: 5px 0; font-family: inherit; }
+.comment-trigger:hover { opacity: .75; }
+.comment-trigger:focus-visible { outline: 2px solid #a64b32; outline-offset: 5px; border-radius: 3px; }
+.comment-dialog { width: min(460px, calc(100vw - 40px)); padding: 26px; border: 1px solid #ece7e1; border-radius: 18px; color: #2c2c31; box-shadow: 0 20px 70px #29221d26; }
+.comment-dialog::backdrop { background: #211d194d; }
+.comment-card-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+.comment-card-heading p { color: #a64b32; font-size: 12px; margin: 0 0 8px; }
+.comment-card-heading h2 { margin: 0; font-size: 21px; line-height: 1.5; }
+.comment-card-rating { margin-top: 16px; color: #a64b32; font-size: 13px; }
+.comment-card-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.9; font-size: 14px; max-height: 55vh; overflow-y: auto; margin: 18px 0 0; }
+.comment-card-text.empty { color: #9999a1; }
+.comment-input-label { display: block; margin: 24px auto 9px; max-width: 460px; text-align: left; font-size: 13px; color: #4b4b53; }
+.comment-input-label span { color: #9999a1; margin-left: 6px; font-size: 11px; }
+.comment-input { display: block; width: 100%; max-width: 460px; box-sizing: border-box; margin: 0 auto 16px; resize: vertical; border: 1px solid #dedee3; border-radius: 9px; padding: 12px; font: inherit; font-size: 13px; line-height: 1.7; color: #4b4b53; background: white; outline-color: #a64b32; }
 .row-work strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; color: #2c2c31; font-size: 14px; font-weight: 500; line-height: 22px; }
 .row-work > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #9a9aa2; font-size: 10.5px; }
 .mark-watched-button { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; height: 32px; padding: 0 12px; background: #fff; border: 1px solid #e2e2e6; border-radius: 8px; color: #6a6a72; font-size: 11.5px; cursor: pointer; }

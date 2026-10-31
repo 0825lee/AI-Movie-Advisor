@@ -1,5 +1,5 @@
 from alembic import command
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.catalog_models import CatalogItem
@@ -52,8 +52,8 @@ def test_migration_backfills_year_aliases_without_reimport_or_rating_change(cata
         data.pop("release_years")
         data.pop("match_keys")
         work.details = data
-        session.execute(text("UPDATE alembic_version SET version_num='0006'"))
         session.commit()
+    command.downgrade(migration_config(migrated_settings), "0006")
     command.upgrade(migration_config(migrated_settings), "head")
     state = client.get("/library/state?media_type=movie&tmdb_id=1").json()
     assert state["item_id"] == before["id"] and state["rating"] == 4

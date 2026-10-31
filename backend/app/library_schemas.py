@@ -11,6 +11,7 @@ Stars = Annotated[int, Field(strict=True, ge=1, le=5)]
 class ManualAdd(CatalogRef):
     status: LibraryStatus
     rating: Stars | None = None
+    comment: str | None = None
 
     @model_validator(mode="after")
     def check_entry(self) -> Self:
@@ -23,6 +24,7 @@ class ManualAdd(CatalogRef):
 
 class MarkWatched(BaseModel):
     rating: Stars | None = None
+    comment: str | None = None
 
 
 class LibraryState(BaseModel):
@@ -30,6 +32,7 @@ class LibraryState(BaseModel):
     status: LibraryStatus | None = None
     rating: int | None = None
     score: int | None = None
+    comment: str = ""
 
 
 class LibraryWork(BaseModel):
@@ -66,6 +69,7 @@ class LibraryEntry(BaseModel):
     score: int | None
     marked_at: int | None
     source: str
+    comment: str
     catalog: LibraryWork
 
 

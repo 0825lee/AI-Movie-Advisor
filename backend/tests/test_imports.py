@@ -177,14 +177,15 @@ def test_restart_preserves_details_and_clear_cancels_old_job(catalog, migrated_s
         assert restarted.post(f"/imports/{job_id}/resume").status_code == 409
 
 
-def test_resume_storage_excludes_comments_tags_and_raw_rating(catalog):
+def test_resume_storage_keeps_profile_fields_and_excludes_unused_fields(catalog):
     client, engine, _ = catalog
     raw = {**record(), "comment": "private comment", "tags": ["private tag"], "rating": 8, "cover": "unused"}
     job_id = create(client, [raw])
     finish(client, job_id)
     with Session(engine) as session:
         row = session.scalar(select(ImportRow).where(ImportRow.job_id == job_id))
-        assert not set(row.payload).intersection({"comment", "tags", "rating", "cover"})
+        assert not set(row.payload).intersection({"tags", "cover"})
+        assert row.payload["comment"] == "private comment" and row.payload["rating"] == 8
         work = session.get(CatalogItem, row.catalog_item_id)
         assert not set(work.details).intersection({"comment", "tags", "rating", "cover"})
 

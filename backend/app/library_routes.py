@@ -7,6 +7,8 @@ from app.catalog_schemas import CatalogRef, SearchType
 from app.catalog_service import CatalogService
 from app.library_schemas import ClearLibraryResult, LibraryEntry, LibraryPage, LibraryState, LibraryStatus, ManualAdd, MarkWatched
 from app.library_service import LibraryService
+from app.profile_records import watched_profile_input
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/library", tags=["我的片库"])
 
@@ -35,6 +37,13 @@ async def get_library_state(ref: Annotated[CatalogRef, Query()], service: Servic
     return await service.state(ref)
 
 
+@router.get("/profile-input")
+def get_profile_input(service: Service) -> dict:
+    """按片库当前状态返回看过记录的六字段画像输入。"""
+    with Session(service.engine) as session:
+        return watched_profile_input(session)
+
+
 @router.delete("", response_model=ClearLibraryResult, dependencies=[Depends(require_idle_import)])
 def clear_library(service: Service) -> ClearLibraryResult:
     """清空想看、看过及个人评分，保留作品资料缓存。"""
@@ -48,4 +57,4 @@ async def add_manual(body: ManualAdd, service: Service) -> LibraryEntry:
 
 @router.post("/{item_id}/watched", response_model=LibraryEntry, dependencies=[Depends(require_idle_import)])
 def mark_watched(item_id: int, body: MarkWatched, service: Service) -> LibraryEntry:
-    return service.mark_watched(item_id, body.rating)
+    return service.mark_watched(item_id, body.rating, body.comment)

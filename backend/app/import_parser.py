@@ -6,7 +6,7 @@ from typing import Any
 from app.catalog_service import parse_title
 from app.douban_metadata import parse_info, release_years
 
-IMPORT_FIELDS = ("title", "originalTitle", "info", "status", "stars", "markedAt", "subjectId", "url")
+IMPORT_FIELDS = ("title", "originalTitle", "info", "status", "stars", "rating", "markedAt", "comment", "subjectId", "url")
 SHANGHAI = timezone(timedelta(hours=8))
 
 

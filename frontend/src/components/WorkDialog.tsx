@@ -16,7 +16,8 @@ export default function WorkDialog({ request, onClose, onSaved }: {
   const [search, setSearch] = useState<SearchResult | null>(null)
   const [lastSearch, setLastSearch] = useState({ query: '' })
   const [detail, setDetail] = useState<Detail | LibraryWork | null>(request.entry?.catalog ?? null)
-  const [state, setState] = useState<LibraryState>(request.entry ? entryState(request.entry) : { item_id: null, status: null, rating: null, score: null })
+  const [state, setState] = useState<LibraryState>(request.entry ? entryState(request.entry) : { item_id: null, status: null, rating: null, score: null, comment: '' })
+  const [comment, setComment] = useState(request.entry?.comment ?? '')
   const [selected, setSelected] = useState<CatalogRef | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -42,7 +43,7 @@ export default function WorkDialog({ request, onClose, onSaved }: {
     try {
       const workDetail = await api<Detail>(detailPath(work, refresh))
       const personalState = await api<LibraryState>(statePath)
-      setDetail(workDetail); setState(personalState)
+      setDetail(workDetail); setState(personalState); setComment(personalState.comment)
     } catch (reason) { setError((reason as Error).message) }
     finally { setBusy(false) }
   }
@@ -53,9 +54,9 @@ export default function WorkDialog({ request, onClose, onSaved }: {
       const existingWish = status === 'watched' && state.item_id !== null
       const updated = await api<LibraryEntry>(existingWish ? `/library/${state.item_id}/watched` : '/library/manual', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(existingWish ? { rating } : { media_type: detail.media_type, tmdb_id: detail.tmdb_id, season_number: detail.season_number, status, rating }),
+        body: JSON.stringify(existingWish ? { rating, comment } : { media_type: detail.media_type, tmdb_id: detail.tmdb_id, season_number: detail.season_number, status, rating, comment }),
       })
-      setState(entryState(updated)); setDetail(updated.catalog); setStep('detail')
+      setState(entryState(updated)); setDetail(updated.catalog); setComment(updated.comment); setStep('detail')
       setNotice(updated.status === 'wish' ? '已加入想看' : '已标记看过')
       onSaved(updated)
     } catch (reason) { setError((reason as Error).message) }
@@ -110,7 +111,7 @@ export default function WorkDialog({ request, onClose, onSaved }: {
           </div></div>
         </>}
       </>}
-      {step === 'rating' && detail && <RatingPicker title={detail.title} busy={busy} onSubmit={rating => void save('watched', rating)} onBack={() => { setStep('detail'); setError('') }} />}
+      {step === 'rating' && detail && <RatingPicker title={detail.title} busy={busy} comment={comment} onCommentChange={setComment} onSubmit={rating => void save('watched', rating)} onBack={() => { setStep('detail'); setError('') }} />}
     </div>
   </dialog>
 }

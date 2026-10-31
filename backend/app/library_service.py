@@ -11,13 +11,15 @@ from app.catalog_service import CatalogService, work_match_keys
 from app.library_models import UserItem
 from app.import_models import ImportJob
 from app.library_schemas import LibraryCounts, LibraryEntry, LibraryPage, LibraryState, LibraryStatus, LibraryWork, ManualAdd
+from app.profile_record_models import ProfileRecord
+from app.profile_records import sync_profile_record
 
 
-def entry(item: UserItem, work: CatalogItem) -> LibraryEntry:
+def entry(item: UserItem, work: CatalogItem, record: ProfileRecord | None) -> LibraryEntry:
     return LibraryEntry(
         id=item.id, status=item.status, rating=item.rating,
         score=item.rating * 2 if item.rating is not None else None,
-        marked_at=item.marked_at, source=item.source, catalog=LibraryWork(
+        marked_at=item.marked_at, source=item.source, comment=(record.payload.get("comment") or "") if record else "", catalog=LibraryWork(
             **work.details, catalog_id=work.id,
             source_url=work.details.get("douban_url") or work.details.get("tmdb_url"),
             source_name="豆瓣" if work.tmdb_id is None else "TMDB",
@@ -75,6 +77,7 @@ class LibraryService:
             return LibraryState(
                 item_id=item.id, status=item.status, rating=item.rating,
                 score=item.rating * 2 if item.rating is not None else None,
+                comment=(record.payload.get("comment") or "") if (record := session.get(ProfileRecord, item.id)) else "",
             )
 
     def clear(self) -> int:
@@ -100,11 +103,13 @@ class LibraryService:
                     CatalogItem.original_title.icontains(query.strip(), autoescape=True),
                 ))
             total = session.scalar(select(func.count()).select_from(UserItem).join(CatalogItem).where(*conditions))
-            rows = session.execute(select(UserItem, CatalogItem).join(CatalogItem).where(*conditions).order_by(
+            rows = session.execute(select(UserItem, CatalogItem, ProfileRecord).join(CatalogItem).outerjoin(
+                ProfileRecord, ProfileRecord.user_item_id == UserItem.id,
+            ).where(*conditions).order_by(
                 func.coalesce(UserItem.marked_at, UserItem.created_at).desc(), UserItem.id.desc(),
             ).offset((page - 1) * 12).limit(12)).all()
             return LibraryPage(
-                items=[entry(item, work) for item, work in rows],
+                items=[entry(item, work, record) for item, work, record in rows],
                 counts=LibraryCounts(**counts), total=total, page=page,
             )
 
@@ -113,11 +118,13 @@ class LibraryService:
         detail = await self.catalog.detail(body)
         with Session(self.engine) as session:
             work = session.get(CatalogItem, detail.catalog_id)
-            item, _ = save_item(session, work.id, body.status, body.rating, int(time.time()), "manual")
+            item, outcome = save_item(session, work.id, body.status, body.rating, int(time.time()), "manual")
+            if outcome != "duplicate":
+                sync_profile_record(session, item, session.get(CatalogItem, item.catalog_item_id), comment=body.comment)
             session.commit()
-            return entry(item, session.get(CatalogItem, item.catalog_item_id))
+            return entry(item, session.get(CatalogItem, item.catalog_item_id), session.get(ProfileRecord, item.id))
 
-    def mark_watched(self, item_id: int, rating: int | None) -> LibraryEntry:
+    def mark_watched(self, item_id: int, rating: int | None, comment: str | None = None) -> LibraryEntry:
         with Session(self.engine) as session:
             item = session.get(UserItem, item_id)
             if item is None:
@@ -127,5 +134,6 @@ class LibraryService:
                 item.rating = rating
                 item.marked_at = int(time.time())
                 item.updated_at = item.marked_at
+                sync_profile_record(session, item, session.get(CatalogItem, item.catalog_item_id), comment=comment)
             session.commit()
-            return entry(item, session.get(CatalogItem, item.catalog_item_id))
+            return entry(item, session.get(CatalogItem, item.catalog_item_id), session.get(ProfileRecord, item.id))

@@ -78,7 +78,7 @@ export default function ImportDialog({ open, libraryCount, onClose, onChanged, o
     finally { setBusy(false) }
   }
   async function clearLibrary() {
-    if (!window.confirm('清空片库会移除全部想看、看过和评分记录。确认清空？')) return
+    if (!window.confirm('清空片库会移除全部想看、看过、评分、评论和画像输入记录。确认清空？')) return
     setBusy(true); setError('')
     try {
       await api('/library', { method: 'DELETE' }); onChanged()

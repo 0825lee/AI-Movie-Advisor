@@ -5,6 +5,7 @@ import { countryNames } from './library-api'
 import type { LibraryEntry, LibraryPageData, LibraryStatus, WorkRequest } from './library-api'
 import WorkDialog from './components/WorkDialog'
 import ImportDialog from './components/ImportDialog'
+import CommentDialog from './components/CommentDialog'
 
 export default function LibraryPage() {
   const [status, setStatus] = useState<LibraryStatus>('watched')
@@ -17,6 +18,7 @@ export default function LibraryPage() {
   const [clearing, setClearing] = useState(false)
   const [error, setError] = useState('')
   const [workRequest, setWorkRequest] = useState<WorkRequest | null>(null)
+  const [commentEntry, setCommentEntry] = useState<LibraryEntry | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [importRunning, setImportRunning] = useState(false)
   const importChanged = useCallback(() => setRevision(n => n + 1), [])
@@ -37,7 +39,7 @@ export default function LibraryPage() {
     setStatus(item.status); setQuery(''); setDraft(''); setPage(1); setRevision(n => n + 1)
   }
   async function clearLibrary() {
-    if (!window.confirm('清空片库会移除全部想看、看过和评分记录。确认清空？')) return
+    if (!window.confirm('清空片库会移除全部想看、看过、评分、评论和画像输入记录。确认清空？')) return
     setClearing(true); setError('')
     try {
       await api<{ deleted: number }>('/library', { method: 'DELETE' })
@@ -65,7 +67,7 @@ export default function LibraryPage() {
               const metadata = [work.year, countryNames(work), work.genres[0]?.name].filter(Boolean).join(' · ')
               return <li className="library-row" key={item.id}><span className="row-number">{String((page - 1) * data.page_size + index + 1).padStart(2, '0')}</span><a className="row-work" href={work.source_url} target="_blank" rel="noreferrer"><strong>{work.title}</strong><span>{metadata}</span></a>
                 {status === 'wish' ? <button className="mark-watched-button" disabled={importRunning} onClick={() => setWorkRequest({ entry: item, startRating: true })}><span aria-hidden="true">✓</span>标记看过</button>
-                  : item.rating === null ? <span className="unrated">未评分</span> : <div className="row-rating" aria-label={`${item.rating} 星，${item.score} 分`}><span className="row-stars" aria-hidden="true">{'★'.repeat(item.rating)}<i>{'★'.repeat(5 - item.rating)}</i></span><span>{item.score} <small>分</small></span></div>}
+                  : <button className={(item.rating === null ? 'unrated' : 'row-rating') + ' comment-trigger'} aria-label={`查看《${work.title}》的评论`} title="查看评论" onClick={() => setCommentEntry(item)}>{item.rating === null ? '未评分' : <><span className="row-stars" aria-hidden="true">{'★'.repeat(item.rating)}<i>{'★'.repeat(5 - item.rating)}</i></span><span>{item.score} <small>分</small></span></>}</button>}
               </li>
             })}</ul></>
             : <div className="library-empty"><span className="empty-film" aria-hidden="true">▤</span><h3>{query ? '没有找到匹配的记录' : status === 'wish' ? '收藏下一部想看的作品' : '记录你的第一部看过'}</h3><p>{query ? '试试其他片名，或切换作品类型。' : '从手动添加或导入开始，建立属于你的片库。'}</p>{!query && <button className="quiet-button" disabled={importRunning} onClick={() => setWorkRequest({})}>＋ 手动添加</button>}</div>}
@@ -85,6 +87,7 @@ export default function LibraryPage() {
       </aside>
     </section>
     {workRequest && <WorkDialog request={workRequest} onClose={() => setWorkRequest(null)} onSaved={saved} />}
+    {commentEntry && <CommentDialog entry={commentEntry} onClose={() => setCommentEntry(null)} />}
     <ImportDialog open={importOpen} libraryCount={count ?? 0} onClose={() => setImportOpen(false)} onChanged={importChanged} onRunningChange={setImportRunning} />
   </main>
 }

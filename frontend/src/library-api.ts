@@ -15,6 +15,7 @@ export type LibraryState = {
   status: LibraryStatus | null
   rating: number | null
   score: number | null
+  comment: string
 }
 export type LibraryEntry = {
   id: number
@@ -23,6 +24,7 @@ export type LibraryEntry = {
   score: number | null
   marked_at: number | null
   source: string
+  comment: string
   catalog: LibraryWork
 }
 export type LibraryPageData = {
@@ -35,7 +37,7 @@ export type LibraryPageData = {
 export type WorkRequest = { entry?: LibraryEntry; startRating?: boolean }
 
 export function entryState(entry: LibraryEntry): LibraryState {
-  return { item_id: entry.id, status: entry.status, rating: entry.rating, score: entry.score }
+  return { item_id: entry.id, status: entry.status, rating: entry.rating, score: entry.score, comment: entry.comment }
 }
 
 const regionNames = new Intl.DisplayNames(['zh-CN'], { type: 'region' })

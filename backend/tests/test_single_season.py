@@ -1,7 +1,7 @@
 from alembic import command
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.catalog_models import CatalogItem
@@ -59,8 +59,8 @@ def test_migration_updates_existing_single_season_cache_without_losing_rating(ca
                    "tmdb_url": "https://www.themoviedb.org/tv/2/season/1"}
         details.pop("single_season")
         work.details = details
-        session.execute(text("UPDATE alembic_version SET version_num='0005'"))
         session.commit()
+    command.downgrade(migration_config(migrated_settings), "0005")
     command.upgrade(migration_config(migrated_settings), "head")
     with TestClient(create_app(migrated_settings)) as restarted:
         saved = restarted.get("/library").json()["items"][0]
