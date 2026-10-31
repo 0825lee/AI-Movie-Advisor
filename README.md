@@ -2,7 +2,7 @@
 
 基于 React、FastAPI、SQLite 和 Dify 的本地电影推荐项目。
 
-当前完成 **最小正式工程、模块 2 作品资料与身份匹配、模块 3 我的片库、模块 4 豆瓣 JSON 导入**。支持电影和剧集各季的搜索与详情、个人想看／看过、可选整数星评分，以及导入进度、逐条结果、暂停和继续。保留资料缓存、来源映射、健康检查和 Dify SSE 客户端。模块 5 已接入 Dify Chatflow 画像生成、版本持久化与前端展示；推荐按后续模块实现。
+当前完成 **最小正式工程、模块 2 作品资料与身份匹配、模块 3 我的片库、模块 4 豆瓣 JSON 导入**。支持电影和剧集各季的搜索与详情、个人想看／看过、可选整数星评分，以及导入进度、逐条结果、暂停和继续。保留资料缓存、来源映射、健康检查和 Dify SSE 客户端。模块 5 已接入 Dify Chatflow 画像生成、版本持久化与前端展示；模块 6 的本次需求推荐后端已实现，Dify 工作流配置与 AI 选片前端待完成。
 
 ## 目录
 
@@ -86,7 +86,7 @@ npm run dev
 | GET | /internal/movies/search | 受认证保护的电影搜索，operationId=search_movies |
 | GET | /internal/movies/{tmdb_id} | 受认证保护的电影详情，operationId=get_movie_details |
 
-详细模型、工具输入输出和 X-Internal-Token 认证定义见运行中的 /openapi.json。电影工具留待后续模块注册到 Dify。
+详细模型、工具输入输出和 X-Internal-Token 认证定义见运行中的 /openapi.json。上述旧 GET 工具保留；模块 6 使用下文独立、带任务上下文的 POST 工具定义。
 
 ## 我的片库
 
@@ -250,6 +250,36 @@ cd backend
 | POST | /profile/rebuild | 删除旧会话及画像，用全部看过记录重新生成；导入或画像生成中暂不能重建 |
 
 本轮已将日常数据库升级至 0009，保留 521 条个人记录。正式 API 第一版成功覆盖 416 条看过记录，前端 /api/profile 代理读取通过。86 项测试覆盖 49／50 条边界、旧想看转看过、会话复用、失败保留与重试、生成中新增、重启保留、清空取消以及批量导入只触发一次；前端构建通过。页面外观及展开交互仍需用户目视验收。
+
+
+## 按本次需求推荐：后端
+
+模块 6 后端已完成，迁移 0010 新增推荐批次、任务、候选集和永久屏蔽基础表。Dify movie-request Workflow 尚需配置、发布及真实模型联调；AI 选片页面、收藏、屏蔽写入和换一批交互尚未实现。
+
+| 方法 | 路径 | 用途 |
+|---|---|---|
+| POST | /recommendations/contexts | 传 request_text，创建不调用模型的调试任务，返回真实 task_id |
+| POST | /recommendations/request | 传 request_text，后台调用正式 Workflow；正常推荐三部 |
+| GET | /recommendations/tasks/{task_id} | 读取状态、真实卡片、错误和 workflow_run_id |
+| POST | /recommendations/tasks/{task_id}/run | 执行准备好的任务或重试失败任务 |
+| POST | /internal/recommendation-contexts/{task_id}/criteria | 固定本次检索条件，要求 X-Internal-Token |
+| POST | /internal/movie-tools/search | search_movies；按固定条件找真实候选，要求内部令牌 |
+| POST | /internal/movie-tools/details | get_movie_details；只允许本任务候选的本地 movie_id，要求内部令牌 |
+| GET | /recommendations/tools/openapi.json | 仅暴露上述两个推荐工具的专用 OpenAPI |
+
+后端只向 Workflow 发送 task_id、request_text、target_count，不发送画像或评分历史。Workflow 的 outputs.result 必须是对象，包含 movie_ids 和逐部对应的 reasons 数组；ID 是工具返回的本地 movie_id，不是 TMDB ID。后端检查数量、不重复、候选归属及最新排除状态，再从真实缓存组装海报、简介和演职员卡片。
+
+条件包含原始年份／时长描述，以及 year_from/year_to、runtime_min/runtime_max 数值；countries 用 ISO 两位大写代码，languages 用两位小写原语言代码，类型使用 TMDB 中文名称。与前期九字段提示词草稿相比，新增四个数值字段并明确国家／语言代码；本地 private_data/request 提供匹配当前接口的提示词和完整画布步骤。
+
+候选使用 TMDB Discover Movie，仅查询电影；复用七天资料缓存，小批并发获取详情。排除看过、屏蔽和本批次已展示，跨来源沿用原名＋全部上映年份的现有规则；想看可推荐。每种条件组合最多三页，正常争取约 12 部候选，已有三部时不会为凑足 12 部而放宽。候选不足依次放宽年代、时长、国家或语言、正向类型；明确排除类型始终保留，主题、氛围和其他内容禁忌交由 Agent 结合真实资料判断，后端不宣称能凭简介保证内容禁忌。
+
+成功结果和已展示集合持久化；失败不会伪造卡片，手动重试，重启后的未完成任务标为失败。某部后来被标记看过或屏蔽，再读结果会移除该卡并标记 needs_refresh。后端关闭会取消本地推荐调用；远端推荐任务停止、交互取消和换批流程留待后续任务生命周期模块。
+
+配置：DIFY_REQUEST_API_KEY 使用独立 movie-request 应用 Key；Dify HTTP 节点与工具的 X-Internal-Token 必须等于 backend/.env 的 MOVIE_INTERNAL_TOKEN。工具的宿主机地址从 BACKEND_PORT 生成，本机为 host.docker.internal:18000。不要向 Agent 导入整个应用的 OpenAPI 或片库写入接口。两个 Python Code 节点可分别复制 backend/dify_nodes 中的文件。
+
+真实 TMDB 验收使用独立数据库，复制日常片库 416 条看过身份参与排除，获取 12 部候选并保存三张后端验收卡片，电影类型和海报正常，耗时约 5.7 秒。验收没有调用模型，理由为明确的验收占位文字，不作为真实推荐效果评估；报告 .runtime/module6-live-check.json 不上传 GitHub。日常数据库已备份升级，521 条个人记录及现有画像保留。
+
+本轮完整回归 100 项中 99 项通过，发现的旧工具 operationId 兼容问题已修复，新旧工具两项复验通过；最终结果校验增加排除类型刷新检查，针对用例复验通过。新推荐用例覆盖真实候选、离线模拟 SSE、重试、无画像输入、逐阶段放宽、负向类型保留、候选外／重复 ID、最新看过与屏蔽、缓存及重启持久化。自动化测试均使用独立数据库与模拟 HTTP。
 
 ## Git
 

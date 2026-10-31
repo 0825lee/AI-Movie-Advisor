@@ -19,6 +19,10 @@ from app.import_service import ImportRunner
 from app.import_routes import router as import_router
 from app.profile_routes import router as profile_router
 from app.profile_service import ProfileRunner
+from app.catalog_service import CatalogService
+from app.recommendation_routes import router as recommendation_router, tools_router as recommendation_tools_router, context_router
+from app.recommendation_service import RecommendationService
+from app.recommendation_runner import RecommendationRunner
 
 
 class HealthResponse(BaseModel):
@@ -48,9 +52,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app.state.tmdb = TMDBClient(http, settings)
             app.state.profile_runner = ProfileRunner(engine, DifyClient(http, settings.dify_base_url), settings)
             app.state.import_runner = ImportRunner(engine, on_finished=app.state.profile_runner.maybe_start)
+            app.state.recommendation_runner = RecommendationRunner(
+                RecommendationService(engine, CatalogService(engine, app.state.tmdb)),
+                DifyClient(http, settings.dify_base_url), settings,
+            )
             yield
             await app.state.import_runner.close()
             await app.state.profile_runner.cancel()
+            await app.state.recommendation_runner.close()
         engine.dispose()
 
     app = FastAPI(title="AI Movie Advisor", version="0.1.0", lifespan=lifespan)
@@ -61,6 +70,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(library_router)
     app.include_router(import_router)
     app.include_router(profile_router)
+    app.include_router(recommendation_router)
+    app.include_router(recommendation_tools_router)
+    app.include_router(context_router)
 
     @app.exception_handler(TMDBError)
     async def tmdb_error_handler(request: Request, exc: TMDBError) -> JSONResponse:
