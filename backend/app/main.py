@@ -17,6 +17,8 @@ from app.tmdb_client import TMDBClient, TMDBError
 from app.library_routes import router as library_router
 from app.import_service import ImportRunner
 from app.import_routes import router as import_router
+from app.profile_routes import router as profile_router
+from app.profile_service import ProfileRunner
 
 
 class HealthResponse(BaseModel):
@@ -44,9 +46,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ) as http:
             app.state.http = http
             app.state.tmdb = TMDBClient(http, settings)
-            app.state.import_runner = ImportRunner(engine)
+            app.state.profile_runner = ProfileRunner(engine, DifyClient(http, settings.dify_base_url), settings)
+            app.state.import_runner = ImportRunner(engine, on_finished=app.state.profile_runner.maybe_start)
             yield
             await app.state.import_runner.close()
+            await app.state.profile_runner.cancel()
         engine.dispose()
 
     app = FastAPI(title="AI Movie Advisor", version="0.1.0", lifespan=lifespan)
@@ -56,6 +60,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(tools_router)
     app.include_router(library_router)
     app.include_router(import_router)
+    app.include_router(profile_router)
 
     @app.exception_handler(TMDBError)
     async def tmdb_error_handler(request: Request, exc: TMDBError) -> JSONResponse:

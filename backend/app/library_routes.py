@@ -45,16 +45,22 @@ def get_profile_input(service: Service) -> dict:
 
 
 @router.delete("", response_model=ClearLibraryResult, dependencies=[Depends(require_idle_import)])
-def clear_library(service: Service) -> ClearLibraryResult:
+async def clear_library(service: Service, request: Request) -> ClearLibraryResult:
     """清空想看、看过及个人评分，保留作品资料缓存。"""
+    await request.app.state.profile_runner.cancel()
     return ClearLibraryResult(deleted=service.clear())
 
 
 @router.post("/manual", response_model=LibraryEntry, dependencies=[Depends(require_idle_import)])
-async def add_manual(body: ManualAdd, service: Service) -> LibraryEntry:
-    return await service.add(body)
+async def add_manual(body: ManualAdd, service: Service, request: Request) -> LibraryEntry:
+    item = await service.add(body)
+    if item.status == "watched":
+        request.app.state.profile_runner.maybe_start()
+    return item
 
 
 @router.post("/{item_id}/watched", response_model=LibraryEntry, dependencies=[Depends(require_idle_import)])
-def mark_watched(item_id: int, body: MarkWatched, service: Service) -> LibraryEntry:
-    return service.mark_watched(item_id, body.rating, body.comment)
+async def mark_watched(item_id: int, body: MarkWatched, service: Service, request: Request) -> LibraryEntry:
+    item = service.mark_watched(item_id, body.rating, body.comment)
+    request.app.state.profile_runner.maybe_start()
+    return item

@@ -4,6 +4,7 @@ from app import catalog_models  # noqa: F401 -- register Alembic metadata
 from app import library_models  # noqa: F401
 from app import import_models  # noqa: F401
 from app import profile_record_models  # noqa: F401
+from app import profile_models  # noqa: F401
 from app.config import Settings
 from app.database import Base, create_database_engine, database_url
 

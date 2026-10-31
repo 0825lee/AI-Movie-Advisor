@@ -13,6 +13,7 @@ from app.import_models import ImportJob
 from app.library_schemas import LibraryCounts, LibraryEntry, LibraryPage, LibraryState, LibraryStatus, LibraryWork, ManualAdd
 from app.profile_record_models import ProfileRecord
 from app.profile_records import sync_profile_record
+from app.profile_models import ProfileJob, ProfileVersion
 
 
 def entry(item: UserItem, work: CatalogItem, record: ProfileRecord | None) -> LibraryEntry:
@@ -82,6 +83,8 @@ class LibraryService:
 
     def clear(self) -> int:
         with Session(self.engine) as session:
+            session.execute(delete(ProfileVersion))
+            session.execute(delete(ProfileJob))
             result = session.execute(delete(UserItem))
             session.execute(update(ImportJob).where(ImportJob.status.in_(["running", "paused"])).values(
                 status="cancelled", message="片库已清空，请重新选择文件导入。", updated_at=int(time.time()),

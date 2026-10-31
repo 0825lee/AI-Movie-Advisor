@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import time
+from collections.abc import Callable
 
 from fastapi import HTTPException
 from sqlalchemy import func, select, update
@@ -22,8 +23,9 @@ logger = logging.getLogger(__name__)
 class ImportRunner:
     """本地解析并逐条提交；继续时只读取 pending 行。"""
 
-    def __init__(self, engine: Engine):
+    def __init__(self, engine: Engine, on_finished: Callable[[], None] | None = None):
         self.engine = engine
+        self.on_finished = on_finished
         self.task: asyncio.Task | None = None
         self.active_job_id: int | None = None
 
@@ -189,6 +191,8 @@ class ImportRunner:
                 await self.process(row_id)
                 await asyncio.sleep(0)
             self.set_status(job_id, "completed")
+            if self.on_finished:
+                self.on_finished()
         except asyncio.CancelledError:
             self.set_status(job_id, "paused", "导入已暂停，已完成的记录会保留。")
             raise

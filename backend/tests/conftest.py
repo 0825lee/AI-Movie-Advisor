@@ -14,6 +14,7 @@ def settings(tmp_path: Path) -> Settings:
         database_path=tmp_path / "test.db",
         movie_internal_token="test-internal-token",
         dify_smoke_api_key=None,
+        dify_profile_api_key=None,
         tmdb_read_access_token=None,
     )
 

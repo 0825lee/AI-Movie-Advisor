@@ -6,6 +6,7 @@ import type { LibraryEntry, LibraryPageData, LibraryStatus, WorkRequest } from '
 import WorkDialog from './components/WorkDialog'
 import ImportDialog from './components/ImportDialog'
 import CommentDialog from './components/CommentDialog'
+import ProfilePanel from './components/ProfilePanel'
 
 export default function LibraryPage() {
   const [status, setStatus] = useState<LibraryStatus>('watched')
@@ -49,7 +50,6 @@ export default function LibraryPage() {
   }
   const count = data ? data.counts.wish + data.counts.watched : null
   const pages = data ? Math.ceil(data.total / data.page_size) : 0
-  const watched = data?.counts.watched ?? 0
 
   return <main className="library-main">
     <section className="library-hero"><div><div className="eyebrow"><span />私人片库</div><h1>我的片库</h1><p>电影使人的寿命延长了三倍。</p></div><div className="library-hero-actions"><button className="import-button" onClick={() => setImportOpen(true)}><span aria-hidden="true">↥</span>{importRunning ? '导入中…' : '导入豆瓣记录'}</button><button className="primary-button" disabled={importRunning} onClick={() => setWorkRequest({})}><span aria-hidden="true">＋</span>手动添加</button></div></section>
@@ -77,14 +77,7 @@ export default function LibraryPage() {
           return <button key={n} className={n === page ? 'active' : ''} aria-label={`第 ${n} 页`} aria-current={n === page ? 'page' : undefined} disabled={loading} onClick={() => setPage(n)}>{n}</button>
         })}<button aria-label="下一页" disabled={loading || page >= pages} onClick={() => setPage(p => p + 1)}>›</button></div></div>
       </section>
-      <aside className="profile-panel" aria-labelledby="profile-title">
-        <div className="eyebrow"><span />画像构建</div><h2 id="profile-title">我的观影画像</h2><p className="profile-subtitle">基于看过的影片生成</p>
-        <div className="profile-pending"><svg aria-hidden="true" width="44" height="44" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4"><rect x="8" y="8" width="32" height="32" rx="9" /><circle cx="18" cy="20" r="1" fill="currentColor" /><circle cx="30" cy="20" r="1" fill="currentColor" /><path d="M17 29c4 4 10 4 14 0" /></svg><h3>暂无观影画像</h3></div>
-        <div className="profile-records"><div><span>已记录看过</span><strong>{data ? watched : '—'}<small> 部</small></strong></div><span className="profile-record-icon" aria-hidden="true">▤</span></div>
-        <div className="profile-progress"><div><span>观影记录积累</span><span>{data ? `${watched} / 50` : '—'}</span></div><progress max="50" value={Math.min(watched, 50)} aria-label="距首份画像所需的观影记录" /><p>{!data ? '读取观影记录后显示进度' : watched < 50 ? `再记录 ${50 - watched} 部看过的作品，积累首份画像所需的记录。` : '已积累首份画像所需的观影记录，画像尚未生成。'}</p></div>
-        <div className="profile-summary-empty"><span>口味总结</span><p>你的观影故事，留待这里慢慢展开。</p></div>
-        <p className="profile-quote">In this terrifying world, all we have are the connections that we make.</p>
-      </aside>
+      <ProfilePanel revision={revision} />
     </section>
     {workRequest && <WorkDialog request={workRequest} onClose={() => setWorkRequest(null)} onSaved={saved} />}
     {commentEntry && <CommentDialog entry={commentEntry} onClose={() => setCommentEntry(null)} />}
