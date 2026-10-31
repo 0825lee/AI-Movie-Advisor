@@ -24,17 +24,17 @@ class CatalogRef(BaseModel):
 
 
 class Person(BaseModel):
-    id: int
+    id: int | None = None
     name: str
 
 
 class Genre(BaseModel):
-    id: int
+    id: int | None = None
     name: str
 
 
 class Country(BaseModel):
-    iso_3166_1: str
+    iso_3166_1: str | None = None
     name: str
 
 

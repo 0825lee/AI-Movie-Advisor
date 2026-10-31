@@ -8,11 +8,11 @@ export type Candidate = CatalogRef & {
 export type Detail = Candidate & {
   catalog_id: number; confirmed: boolean; fetched_at: number
   overview_language: string | null; original_language: string; runtime: number | null
-  genres: { id: number; name: string }[]
-  countries: { iso_3166_1: string; name: string }[]
-  directors: { id: number; name: string }[]
-  creators: { id: number; name: string }[]
-  cast: { id: number; name: string }[]
+  genres: { id: number | null; name: string }[]
+  countries: { iso_3166_1: string | null; name: string }[]
+  directors: { id: number | null; name: string }[]
+  creators: { id: number | null; name: string }[]
+  cast: { id: number | null; name: string }[]
   seasons: { season_number: number; name: string; year: number | null; episode_count: number }[]
   episode_count: number | null; tmdb_url: string
 }

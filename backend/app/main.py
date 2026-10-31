@@ -15,7 +15,6 @@ from app.database import create_database_engine
 from app.dify_client import DifyClient, DifyWorkflowError, WorkflowResult
 from app.tmdb_client import TMDBClient, TMDBError
 from app.library_routes import router as library_router
-from app.catalog_service import CatalogService
 from app.import_service import ImportRunner
 from app.import_routes import router as import_router
 
@@ -45,7 +44,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ) as http:
             app.state.http = http
             app.state.tmdb = TMDBClient(http, settings)
-            app.state.import_runner = ImportRunner(engine, CatalogService(engine, app.state.tmdb))
+            app.state.import_runner = ImportRunner(engine)
             yield
             await app.state.import_runner.close()
         engine.dispose()

@@ -7,18 +7,31 @@ from sqlalchemy.orm import Session
 
 from app.catalog_models import CatalogItem
 from app.catalog_schemas import CatalogRef, SearchType
-from app.catalog_service import CatalogService, serialized
+from app.catalog_service import CatalogService
 from app.library_models import UserItem
 from app.import_models import ImportJob
-from app.library_schemas import LibraryCounts, LibraryEntry, LibraryPage, LibraryState, LibraryStatus, ManualAdd
+from app.library_schemas import LibraryCounts, LibraryEntry, LibraryPage, LibraryState, LibraryStatus, LibraryWork, ManualAdd
 
 
 def entry(item: UserItem, work: CatalogItem) -> LibraryEntry:
     return LibraryEntry(
         id=item.id, status=item.status, rating=item.rating,
         score=item.rating * 2 if item.rating is not None else None,
-        marked_at=item.marked_at, source=item.source, catalog=serialized(work),
+        marked_at=item.marked_at, source=item.source, catalog=LibraryWork(
+            **work.details, catalog_id=work.id,
+            source_url=work.details.get("douban_url") or work.details.get("tmdb_url"),
+            source_name="豆瓣" if work.tmdb_id is None else "TMDB",
+        ),
     )
+
+
+def find_item(session: Session, work: CatalogItem) -> UserItem | None:
+    conditions = [UserItem.catalog_item_id == work.id]
+    if work.match_key is not None:
+        conditions.append(CatalogItem.match_key == work.match_key)
+    return session.scalar(select(UserItem).join(CatalogItem).where(or_(*conditions)).order_by(
+        (UserItem.status == "watched").desc(), UserItem.id,
+    ).limit(1))
 
 
 def save_item(
@@ -26,7 +39,7 @@ def save_item(
     marked_at: int | None, source: str,
 ) -> tuple[UserItem, str]:
     now = int(time.time())
-    item = session.scalar(select(UserItem).where(UserItem.catalog_item_id == catalog_item_id))
+    item = find_item(session, session.get(CatalogItem, catalog_item_id))
     outcome = "duplicate"
     if item is None:
         item = UserItem(
@@ -50,9 +63,10 @@ class LibraryService:
         self.engine = engine
         self.catalog = catalog
 
-    def state(self, ref: CatalogRef) -> LibraryState:
+    async def state(self, ref: CatalogRef) -> LibraryState:
+        detail = await self.catalog.detail(ref)
         with Session(self.engine) as session:
-            item = session.scalar(select(UserItem).join(CatalogItem).where(CatalogItem.identity_key == ref.identity_key))
+            item = find_item(session, session.get(CatalogItem, detail.catalog_id))
             if item is None:
                 return LibraryState()
             return LibraryState(
@@ -98,7 +112,7 @@ class LibraryService:
             work = session.get(CatalogItem, detail.catalog_id)
             item, _ = save_item(session, work.id, body.status, body.rating, int(time.time()), "manual")
             session.commit()
-            return entry(item, work)
+            return entry(item, session.get(CatalogItem, item.catalog_item_id))
 
     def mark_watched(self, item_id: int, rating: int | None) -> LibraryEntry:
         with Session(self.engine) as session:

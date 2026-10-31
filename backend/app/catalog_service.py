@@ -57,6 +57,15 @@ def serialized(item: CatalogItem) -> CatalogDetail:
     )
 
 
+def name_year_key(original_title: str, title: str, year: int | None, season_number: int | None = None) -> str | None:
+    if year is None:
+        return None
+    name, _, parsed_season = parse_title(original_title or title)
+    season = season_number if season_number is not None else parsed_season
+    key = f"{normalized_name(name)}:{year}"
+    return key if season is None else f"{key}:season:{season}"
+
+
 class CatalogService:
     def __init__(self, engine: Engine, tmdb: TMDBClient):
         self.engine = engine
@@ -125,6 +134,7 @@ class CatalogService:
             identity_key=ref.identity_key, media_type=ref.media_type,
             tmdb_id=ref.tmdb_id, season_number=ref.season_number,
             title=data["title"], original_title=data["original_title"], year=data["year"],
+            match_key=name_year_key(data["original_title"], data["title"], data["year"], ref.season_number),
             details=data, fetched_at=int(time.time()),
         )
         statement = insert(CatalogItem).values(**values).on_conflict_do_update(
@@ -210,7 +220,7 @@ class CatalogService:
 
     def confirmed_items(self, page: int = 1) -> CatalogPage:
         with Session(self.engine) as session:
-            condition = CatalogItem.confirmed_at.is_not(None)
+            condition = CatalogItem.confirmed_at.is_not(None) & CatalogItem.tmdb_id.is_not(None)
             total = session.scalar(select(func.count()).select_from(CatalogItem).where(condition))
             items = session.scalars(select(CatalogItem).where(condition).order_by(
                 CatalogItem.confirmed_at.desc(), CatalogItem.id.desc(),

@@ -47,7 +47,7 @@ body { background: #eeeff1; }
 .library-row { display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 10px 16px; border-radius: 12px; }
 .library-row:hover { background: #fafafa; }
 .row-number { width: 27px; flex-shrink: 0; color: #b4b4bc; text-align: center; font: 10.5px ui-monospace, monospace; letter-spacing: .05em; }
-.row-work { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; }
+.row-work { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; text-decoration: none; }
 .row-work strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; color: #2c2c31; font-size: 14px; font-weight: 500; line-height: 22px; }
 .row-work > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #9a9aa2; font-size: 10.5px; }
 .mark-watched-button { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; height: 32px; padding: 0 12px; background: #fff; border: 1px solid #e2e2e6; border-radius: 8px; color: #6a6a72; font-size: 11.5px; cursor: pointer; }
@@ -95,7 +95,7 @@ body { background: #eeeff1; }
 .work-dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 25px; }
 .work-dialog-heading h2 { margin: 0; font-size: 18px; }
 .work-dialog-heading p { margin: 7px 0 0; color: #96969f; font-size: 11px; }
-.work-search { display: grid; grid-template-columns: 1fr 115px 80px; gap: 10px; }
+.work-search { display: grid; grid-template-columns: 1fr 80px; gap: 10px; }
 .work-search input, .work-search select { width: 100%; height: 42px; border: 1px solid #dedee3; border-radius: 7px; background: #fff; padding: 0 12px; color: #4b4b53; font-size: 12px; outline-color: #a64b32; }
 .work-search input::placeholder { color: #aaaab2; }
 .work-search .primary-button { padding: 0 15px; }
@@ -169,8 +169,7 @@ body { background: #eeeff1; }
   .profile-panel > h2 { font-size: 24px; }
   .work-dialog { width: calc(100vw - 24px); }
   .work-dialog .detail-shell { padding: 20px 20px 0; }
-  .work-search { grid-template-columns: 1fr 92px; }
-  .work-search input { grid-column: 1 / -1; }
+  .work-search { grid-template-columns: 1fr 80px; }
   .work-search select, .work-search button { width: 100%; }
   .work-dialog .work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .library-detail-actions { margin-left: -20px; margin-right: -20px; padding: 17px 20px; flex-wrap: wrap; }

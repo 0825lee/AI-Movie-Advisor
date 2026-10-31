@@ -2,7 +2,7 @@ from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, Field, model_validator
 
-from app.catalog_schemas import CatalogDetail, CatalogRef
+from app.catalog_schemas import CatalogRef, Country, Genre, Person
 
 LibraryStatus = Literal["wish", "watched"]
 Stars = Annotated[int, Field(strict=True, ge=1, le=5)]
@@ -32,6 +32,33 @@ class LibraryState(BaseModel):
     score: int | None = None
 
 
+class LibraryWork(BaseModel):
+    catalog_id: int
+    media_type: str
+    tmdb_id: int | None
+    season_number: int | None = None
+    title: str
+    original_title: str
+    year: int | None
+    overview: str = ""
+    overview_language: str | None = None
+    original_language: str = ""
+    poster_url: str | None = None
+    runtime: int | None = None
+    genres: list[Genre] = Field(default_factory=list)
+    countries: list[Country] = Field(default_factory=list)
+    directors: list[Person] = Field(default_factory=list)
+    creators: list[Person] = Field(default_factory=list)
+    cast: list[Person] = Field(default_factory=list)
+    seasons: list[dict] = Field(default_factory=list)
+    episode_count: int | None = None
+    tmdb_url: str | None = None
+    source_url: str
+    source_name: str
+    info: str = ""
+    languages: list[str] = Field(default_factory=list)
+
+
 class LibraryEntry(BaseModel):
     id: int
     status: LibraryStatus
@@ -39,7 +66,7 @@ class LibraryEntry(BaseModel):
     score: int | None
     marked_at: int | None
     source: str
-    catalog: CatalogDetail
+    catalog: LibraryWork
 
 
 class LibraryCounts(BaseModel):

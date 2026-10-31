@@ -31,8 +31,8 @@ def list_library(
 
 
 @router.get("/state", response_model=LibraryState)
-def get_library_state(ref: Annotated[CatalogRef, Query()], service: Service) -> LibraryState:
-    return service.state(ref)
+async def get_library_state(ref: Annotated[CatalogRef, Query()], service: Service) -> LibraryState:
+    return await service.state(ref)
 
 
 @router.delete("", response_model=ClearLibraryResult, dependencies=[Depends(require_idle_import)])

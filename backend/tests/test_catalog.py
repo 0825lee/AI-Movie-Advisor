@@ -12,7 +12,8 @@ from app.catalog_service import parse_title
 from app.main import create_app
 
 
-def movie(tmdb_id=1, title="Alpha", year=2010):
+def movie(tmdb_id=1, title=None, year=2010):
+    title = title or ("Alpha" if tmdb_id == 1 else f"Movie {tmdb_id}")
     return dict(
         id=tmdb_id, title=title, original_title=title, release_date=f"{year}-01-01",
         overview="中文简介", original_language="en", poster_path="/alpha.jpg", runtime=100,

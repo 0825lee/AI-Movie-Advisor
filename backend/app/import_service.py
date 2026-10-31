@@ -7,25 +7,22 @@ from sqlalchemy import func, select, update
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from app.catalog_models import CatalogItem, SourceMapping
-from app.catalog_schemas import CatalogRef, MatchRequest, SourceReference
-from app.catalog_service import CatalogService
+from app.catalog_models import CatalogItem
+from app.catalog_service import name_year_key
 from app.import_models import ImportJob, ImportRow
 from app.import_parser import IMPORT_FIELDS, parse_record
 from app.import_schemas import ImportCounts, ImportRequest, ImportRowResult, ImportRowsPage, ImportSummary
 from app.library_models import UserItem
 from app.library_service import save_item
-from app.tmdb_client import TMDBError
 
 logger = logging.getLogger(__name__)
 
 
 class ImportRunner:
-    """本地单进程导入；逐条提交，继续时只读取 pending 行。"""
+    """本地解析并逐条提交；继续时只读取 pending 行。"""
 
-    def __init__(self, engine: Engine, catalog: CatalogService):
+    def __init__(self, engine: Engine):
         self.engine = engine
-        self.catalog = catalog
         self.task: asyncio.Task | None = None
         self.active_job_id: int | None = None
 
@@ -151,60 +148,43 @@ class ImportRunner:
         except (KeyError, ValueError) as exc:
             self.finish_row(row_id, "failed", f"记录字段无法解析：{exc}")
             return
-        match = await self.catalog.match(MatchRequest(
-            title=record.title, original_title=record.original_title, year=record.year,
-            season_number=record.season_number,
-            media_type="season" if record.season_number is not None else "all",
-            source=SourceReference(source_id=record.source_id, source_url=record.source_url),
-        ))
-        if match.status != "matched":
-            self.finish_row(row_id, "skipped", match.reason)
-            return
-        work = match.item
-        message = "已导入"
-        if work.media_type == "tv":
-            formal = [season for season in work.seasons if season.season_number > 0]
-            season = formal[0] if len(formal) == 1 else next((s for s in formal if s.season_number == 1), None)
-            if season is None:
-                self.finish_row(row_id, "skipped", "没有找到正式季资料。")
-                return
-            work = await self.catalog.detail(CatalogRef(media_type="season", tmdb_id=work.tmdb_id, season_number=season.season_number))
-            message = "未标季号，匹配唯一正式季。" if len(formal) == 1 else "未标季号，匹配第一季。"
+        now = int(time.time())
+        media_type = "work"
+        details = dict(
+            **record.metadata, title=record.title, original_title=record.original_title,
+            year=record.year, media_type=media_type, tmdb_id=None, season_number=record.season_number,
+            douban_id=record.source_id,
+            douban_url=record.source_url or f"https://movie.douban.com/subject/{record.source_id}/",
+        )
         with Session(self.engine) as session:
-            _, outcome = save_item(session, work.catalog_id, record.status, record.rating, record.marked_at, "douban")
-            mapping = session.scalar(select(SourceMapping).where(
-                SourceMapping.source == "douban", SourceMapping.source_id == record.source_id,
-            ))
-            if mapping is None:
-                session.add(SourceMapping(source="douban", source_id=record.source_id, source_url=record.source_url, catalog_item_id=work.catalog_id))
-            else:
-                mapping.catalog_item_id = work.catalog_id
-                mapping.source_url = record.source_url
+            identity = f"douban:{record.source_id}"
+            work = session.scalar(select(CatalogItem).where(CatalogItem.identity_key == identity))
+            if work is None:
+                work = CatalogItem(identity_key=identity, fetched_at=now)
+                session.add(work)
+            work.media_type, work.tmdb_id = media_type, None
+            work.title, work.original_title = record.title, record.original_title
+            work.year, work.season_number = record.year, record.season_number
+            work.match_key = name_year_key(record.original_title, record.title, record.year, record.season_number)
+            work.details, work.fetched_at = details, now
+            session.flush()
+            item, outcome = save_item(session, work.id, record.status, record.rating, record.marked_at, "douban")
             row = session.get(ImportRow, row_id)
             row.outcome = outcome
-            row.message = message if outcome == "added" else "记录已存在。" if outcome == "duplicate" else "想看已更新为看过。"
-            row.catalog_item_id = work.catalog_id
+            row.message = {"added": "已导入", "duplicate": "记录已存在。", "upgraded": "想看已更新为看过。"}[outcome]
+            row.catalog_item_id = item.catalog_item_id
             session.commit()
 
     async def run(self, job_id: int) -> None:
         try:
-            while True:
-                with Session(self.engine) as session:
-                    row_id = session.scalar(select(ImportRow.id).where(
-                        ImportRow.job_id == job_id, ImportRow.outcome == "pending",
-                    ).order_by(ImportRow.row_number).limit(1))
-                if row_id is None:
-                    self.set_status(job_id, "completed")
-                    return
-                try:
-                    await self.process(row_id)
-                except TMDBError as exc:
-                    if exc.status_code == 404:
-                        self.finish_row(row_id, "skipped", exc.message)
-                    else:
-                        self.set_status(job_id, "paused", exc.message + " 连接恢复后点击继续导入。")
-                        return
-                await asyncio.sleep(0)  # 每条记录之间让出事件循环，供进度查询及暂停。
+            with Session(self.engine) as session:
+                row_ids = list(session.scalars(select(ImportRow.id).where(
+                    ImportRow.job_id == job_id, ImportRow.outcome == "pending",
+                ).order_by(ImportRow.row_number)))
+            for row_id in row_ids:
+                await self.process(row_id)
+                await asyncio.sleep(0)
+            self.set_status(job_id, "completed")
         except asyncio.CancelledError:
             self.set_status(job_id, "paused", "导入已暂停，已完成的记录会保留。")
             raise

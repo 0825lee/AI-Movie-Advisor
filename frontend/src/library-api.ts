@@ -1,6 +1,15 @@
-import type { Detail } from './catalog-api'
+import type { Detail, MediaType } from './catalog-api'
 
 export type LibraryStatus = 'wish' | 'watched'
+export type LibraryWork = Omit<Detail, 'media_type' | 'tmdb_id' | 'tmdb_url' | 'confirmed' | 'fetched_at'> & {
+  media_type: MediaType | 'work'
+  tmdb_id: number | null
+  tmdb_url: string | null
+  source_url: string
+  source_name: string
+  info: string
+  languages: string[]
+}
 export type LibraryState = {
   item_id: number | null
   status: LibraryStatus | null
@@ -14,7 +23,7 @@ export type LibraryEntry = {
   score: number | null
   marked_at: number | null
   source: string
-  catalog: Detail
+  catalog: LibraryWork
 }
 export type LibraryPageData = {
   items: LibraryEntry[]
@@ -30,6 +39,6 @@ export function entryState(entry: LibraryEntry): LibraryState {
 }
 
 const regionNames = new Intl.DisplayNames(['zh-CN'], { type: 'region' })
-export function countryNames(work: Detail): string {
-  return work.countries.map(c => regionNames.of(c.iso_3166_1) || c.name).join(' / ')
+export function countryNames(work: Pick<Detail, 'countries'>): string {
+  return work.countries.map(c => c.iso_3166_1 ? regionNames.of(c.iso_3166_1) || c.name : c.name).join(' / ')
 }
