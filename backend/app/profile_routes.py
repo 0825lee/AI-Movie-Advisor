@@ -23,3 +23,9 @@ def get_profile(runner: Runner) -> ProfileState:
 @router.post("/generate", response_model=ProfileState)
 async def generate_profile(runner: Runner) -> ProfileState:
     return runner.start()
+
+
+@router.post("/rebuild", response_model=ProfileState)
+async def rebuild_profile(runner: Runner, request: Request) -> ProfileState:
+    request.app.state.import_runner.ensure_idle()
+    return await runner.rebuild()

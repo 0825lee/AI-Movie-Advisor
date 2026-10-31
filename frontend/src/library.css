@@ -67,6 +67,7 @@ body { background: #eeeff1; }
 .profile-live-summary h3 { font-size: 13px; color: #a64b32; margin: 0 0 10px; }
 .profile-live-summary p { font-size: 13px; color: #66666e; line-height: 1.9; margin: 0; white-space: pre-wrap; }
 .profile-generate { margin: 0 0 20px; }
+.profile-rebuild { margin: 0 0 20px 16px; }
 .profile-error { color: #a64b32; font-size: 12px; line-height: 1.8; }
 .profile-conclusions { margin: 24px 0; }
 .profile-conclusions h3 { font-size: 15px; margin: 0 0 12px; }

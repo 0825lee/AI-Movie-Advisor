@@ -40,7 +40,7 @@ export default function LibraryPage() {
     setStatus(item.status); setQuery(''); setDraft(''); setPage(1); setRevision(n => n + 1)
   }
   async function clearLibrary() {
-    if (!window.confirm('清空片库会移除全部想看、看过、评分、评论和画像输入记录。确认清空？')) return
+    if (!window.confirm('清空片库会移除全部想看、看过、评分、评论、画像及 Dify 画像会话。确认清空？')) return
     setClearing(true); setError('')
     try {
       await api<{ deleted: number }>('/library', { method: 'DELETE' })

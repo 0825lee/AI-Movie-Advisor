@@ -63,6 +63,14 @@ class DifyClient:
         )
         response.raise_for_status()
 
+    async def delete_conversation(self, api_key: str, conversation_id: str, user: str = "local-user") -> None:
+        response = await self.http.request(
+            "DELETE", self.base_url + f"/conversations/{conversation_id}",
+            headers={"Authorization": "Bearer " + api_key}, json={"user": user},
+        )
+        if response.status_code != 404:
+            response.raise_for_status()
+
     async def chat(
         self, api_key: str, query: str, file_id: str, conversation_id: str | None = None,
         user: str = "local-user", on_event: Callable[[dict[str, Any]], None] | None = None,

@@ -50,7 +50,8 @@ def finish(client):
 def profile_app(migrated_settings):
     migrated_settings.dify_profile_api_key = SecretStr("test-profile-key")
     app = create_app(migrated_settings)
-    calls = {"uploads": [], "messages": [], "stops": [], "fail": False, "invalid": False, "hold": False,
+    calls = {"uploads": [], "messages": [], "stops": [], "deletions": [], "delete_status": 204,
+             "fail": False, "invalid": False, "hold": False,
              "started": asyncio.Event(), "release": asyncio.Event()}
 
     class HoldingStream(httpx.AsyncByteStream):
@@ -65,6 +66,10 @@ def profile_app(migrated_settings):
 
     def handler(request):
         assert request.headers["Authorization"] == "Bearer test-profile-key"
+        if request.method == "DELETE":
+            assert json.loads(request.content) == {"user": "local-user"}
+            calls["deletions"].append(request.url.path)
+            return httpx.Response(calls["delete_status"])
         if request.url.path.endswith("/files/upload"):
             message = BytesParser(policy=policy.default).parsebytes(
                 b"Content-Type: " + request.headers["content-type"].encode() + b"\r\n\r\n" + request.content)
@@ -180,6 +185,7 @@ def test_clear_cancels_generation_and_removes_profile_state(profile_app):
     state = client.get("/profile").json()
     assert state["profile"] is None and state["watched_count"] == 0 and state["job"] is None
     assert calls["stops"] == ["/v1/chat-messages/task-held/stop"]
+    assert calls["deletions"] == ["/v1/conversations/conversation-1"]
     with Session(engine) as session:
         assert session.scalar(select(func.count()).select_from(ProfileJob)) == 0
 
@@ -230,3 +236,69 @@ def test_large_import_triggers_one_initial_profile_after_import_finishes(profile
     state = finish(client)
     assert state["profile"]["covered_count"] == 60
     assert len(calls["messages"]) == 1 and len(calls["uploads"][0]["records"]) == 60
+
+
+def test_rebuild_deletes_old_conversation_and_sends_all_watched_without_previous(profile_app):
+    client, engine, calls = profile_app
+    seed(engine, 50)
+    seed(engine, 1, "wish")
+    client.post("/profile/generate")
+    finish(client)
+    seed(engine, 3)
+    assert client.post("/profile/rebuild").status_code == 200
+    state = finish(client)
+    assert calls["deletions"] == ["/v1/conversations/conversation-1"]
+    assert calls["messages"][1]["conversation_id"] == ""
+    assert "测试画像" not in calls["messages"][1]["query"]
+    assert len(calls["uploads"][1]["records"]) == 53
+    assert state["profile"]["version"] == 1 and state["covered_count"] == 53
+    assert client.get("/library?status=wish").json()["counts"]["wish"] == 1
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(UserItem)) == 54
+        assert session.scalar(select(func.count()).select_from(ProfileVersion)) == 1
+
+
+@pytest.mark.parametrize("operation", ["rebuild", "clear"])
+def test_remote_delete_failure_keeps_local_data_for_retry(profile_app, operation):
+    client, engine, calls = profile_app
+    seed(engine, 50)
+    client.post("/profile/generate")
+    finish(client)
+    calls["delete_status"] = 500
+    response = client.post("/profile/rebuild") if operation == "rebuild" else client.delete("/library")
+    assert response.status_code == 502
+    state = client.get("/profile").json()
+    assert state["covered_count"] == 50 and state["profile"]["version"] == 1
+    assert len(calls["messages"]) == 1
+    with Session(engine) as session:
+        assert session.scalar(select(func.count()).select_from(UserItem)) == 50
+
+
+def test_rebuild_allows_already_deleted_conversation_and_failed_generation_can_retry(profile_app):
+    client, engine, calls = profile_app
+    seed(engine, 50)
+    client.post("/profile/generate")
+    finish(client)
+    calls["delete_status"] = 404
+    calls["fail"] = True
+    assert client.post("/profile/rebuild").status_code == 200
+    state = finish(client)
+    assert state["profile"] is None and state["covered_count"] == 0
+    assert state["job"]["status"] == "failed"
+    assert calls["messages"][1]["conversation_id"] == ""
+    calls["fail"] = False
+    client.post("/profile/generate")
+    assert finish(client)["covered_count"] == 50
+
+
+def test_rebuild_checks_threshold_before_deleting_and_rejects_running_job(profile_app):
+    client, engine, calls = profile_app
+    seed(engine, 49)
+    assert client.post("/profile/rebuild").status_code == 409
+    assert calls["deletions"] == []
+    seed(engine, 1)
+    calls["hold"] = True
+    client.post("/profile/generate")
+    client.portal.call(calls["started"].wait)
+    assert client.post("/profile/rebuild").status_code == 409
+    assert calls["deletions"] == []

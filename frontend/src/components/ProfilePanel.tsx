@@ -28,9 +28,10 @@ export default function ProfilePanel({ revision }: { revision: number }) {
     return () => window.clearInterval(timer)
   }, [state?.generating])
 
-  async function generate() {
+  async function generate(rebuild = false) {
+    if (rebuild && !window.confirm('重建会删除旧画像和 Dify 画像会话，使用全部看过记录从第 1 版重新生成。片库保留；若生成失败，需要重试。确认重建？')) return
     setStarting(true); setError('')
-    try { setState(await api<ProfileState>('/profile/generate', { method: 'POST' })) }
+    try { setState(await api<ProfileState>(rebuild ? '/profile/rebuild' : '/profile/generate', { method: 'POST' })) }
     catch (reason) { setError((reason as Error).message) }
     finally { setStarting(false) }
   }
@@ -50,6 +51,7 @@ export default function ProfilePanel({ revision }: { revision: number }) {
     {failed && <p className="profile-error" role="alert">{state.job?.error}{profile ? ' 当前仍显示上一版画像。' : ''}</p>}
     {state && !state.configured && <p className="profile-error">画像服务尚未配置。</p>}
     <button className="primary-button profile-generate" disabled={!state || !state.configured || Boolean(busy) || state.remaining > 0} onClick={() => void generate()}>{busy ? '画像生成中…' : failed ? '重试生成' : profile ? '更新画像' : '生成观影画像'}</button>
+    {state && (profile || state.job) && <button className="text-button profile-rebuild" disabled={!state.configured || Boolean(busy) || state.watched_count < 50} onClick={() => void generate(true)}>重建画像</button>}
     {profile && <><Conclusions title="主要偏好" items={profile.preferences} /><Conclusions title="较少偏好" items={profile.less_preferred} /><Conclusions title="近期变化" items={profile.recent_changes} />{profile.limitations.length > 0 && <details className="profile-limitations"><summary>画像依据说明</summary><ul>{profile.limitations.map((text, i) => <li key={i}>{text}</li>)}</ul></details>}</>}
     <p className="profile-quote">In this terrifying world, all we have are the connections that we make.</p>
   </aside>

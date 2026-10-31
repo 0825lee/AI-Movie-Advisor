@@ -47,7 +47,7 @@ def get_profile_input(service: Service) -> dict:
 @router.delete("", response_model=ClearLibraryResult, dependencies=[Depends(require_idle_import)])
 async def clear_library(service: Service, request: Request) -> ClearLibraryResult:
     """清空想看、看过及个人评分，保留作品资料缓存。"""
-    await request.app.state.profile_runner.cancel()
+    await request.app.state.profile_runner.reset()
     return ClearLibraryResult(deleted=service.clear())
 
 

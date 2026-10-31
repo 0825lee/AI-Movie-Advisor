@@ -6,7 +6,7 @@ import time
 import httpx
 from fastapi import HTTPException
 from pydantic import ValidationError
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
@@ -89,6 +89,37 @@ class ProfileRunner:
         state = self.state()
         if state.remaining == 0 and not (state.job and state.job.status in {"failed", "cancelled"}):
             self.start()
+
+    async def reset(self) -> None:
+        await self.cancel()
+        with Session(self.engine) as session:
+            conversations = set(session.scalars(select(ProfileJob.conversation_id)))
+            conversations.update(session.scalars(select(ProfileVersion.conversation_id)))
+        conversations.discard(None)
+        if conversations:
+            if not self.settings.dify_profile_api_key:
+                raise HTTPException(503, "请配置画像应用 Key 后再清除 Dify 会话。")
+            try:
+                for conversation_id in conversations:
+                    await self.client.delete_conversation(
+                        self.settings.dify_profile_api_key.get_secret_value(), conversation_id,
+                    )
+            except httpx.HTTPError as exc:
+                raise HTTPException(502, "未能删除 Dify 旧会话，尚未清除本地画像，请稍后重试。") from exc
+        with Session(self.engine) as session:
+            session.execute(delete(ProfileJob))
+            session.execute(delete(ProfileVersion))
+            session.commit()
+
+    async def rebuild(self) -> ProfileState:
+        if self.running:
+            raise HTTPException(409, "画像正在生成，请等待本次完成后重建。")
+        if not self.settings.dify_profile_api_key:
+            raise HTTPException(503, "请配置并保存 DIFY_PROFILE_API_KEY 后重启后端。")
+        if self.state().watched_count < PROFILE_THRESHOLD:
+            raise HTTPException(409, "至少记录 50 部看过的影片后重建画像。")
+        await self.reset()
+        return self.start()
 
     def finish_job(self, job_id: int, status: str, error: str | None = None) -> None:
         with Session(self.engine) as session:
