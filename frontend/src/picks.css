@@ -12,6 +12,9 @@
 .picks-workspace { background: #f7f7f8; padding: 40px 64px 64px; min-height: 65vh; }
 .picks-demand-panel { padding: 28px; border: 1px solid #e8e8eb; border-radius: 16px; background: white; box-shadow: 0 1px 2px #18181b09; }
 .picks-demand-panel h2 { margin: 10px 0 0; color: #242427; font-size: 21px; font-weight: 600; letter-spacing: -.015em; }
+.picks-profile-details { margin: 0 0 22px; color: #77777f; font-size: 12px; line-height: 1.9; }
+.picks-profile-details summary { color: #a64b32; cursor: pointer; }
+.picks-profile-details p { margin: 14px 0 0; white-space: pre-wrap; }
 .picks-description { margin: 8px 0 20px; color: #8e8e96; font-size: 12px; line-height: 1.8; }
 .picks-demand-panel textarea { display: block; width: 100%; min-height: 116px; padding: 14px 16px; border: 1px solid #dedee3; border-radius: 12px; background: #fcfcfd; color: #2c2c31; resize: vertical; font: inherit; font-size: 13.5px; line-height: 24px; }
 .picks-demand-panel textarea::placeholder { color: #ababb3; }

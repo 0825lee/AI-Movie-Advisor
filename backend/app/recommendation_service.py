@@ -14,6 +14,7 @@ from app.catalog_service import CatalogService, serialized, work_match_keys
 from app.recommendation_models import RecommendationBatch, RecommendationCandidate, RecommendationTask
 from app.recommendation_rules import AI_NOMINATION, constraint_mismatch, exclusions, is_excluded, open_task, person_ids, task_row
 from app.recommendation_schemas import RecommendationCard, RecommendationSelection, RecommendationState, RequestCriteria
+from app.profile_models import ProfileVersion
 
 RELAXATIONS = ["完整条件", "放宽年代", "放宽时长", "放宽国家和语言", "放宽正向类型"]
 
@@ -35,6 +36,29 @@ class RecommendationService:
             session.commit()
         return task_id
 
+    def create_personalized(self) -> str:
+        with Session(self.engine) as session:
+            profile = session.scalar(select(ProfileVersion).order_by(ProfileVersion.version.desc()).limit(1))
+            if profile is None:
+                raise HTTPException(409, "请先构建观影画像，再按画像推荐。")
+            now = int(time.time())
+            batch_id, task_id = str(uuid4()), str(uuid4())
+            session.add(RecommendationBatch(id=batch_id, request_text=f"根据第 {profile.version} 版观影画像推荐电影",
+                                             shown_ids=[], created_at=now))
+            session.flush()
+            session.add(RecommendationTask(id=task_id, batch_id=batch_id, status="prepared", strategy=AI_NOMINATION,
+                                           mode="personalized", target_count=3, profile_version=profile.version,
+                                           profile_snapshot=profile.data, created_at=now, updated_at=now))
+            session.commit()
+        return task_id
+
+    def profile_input(self, task_id: str) -> dict:
+        with Session(self.engine) as session:
+            task = task_row(session, task_id)
+            if task.mode != "personalized":
+                raise HTTPException(409, "本次需求推荐任务不读取画像。")
+            return task.profile_snapshot
+
     def state(self, task_id: str) -> RecommendationState:
         with Session(self.engine) as session:
             task = task_row(session, task_id)
@@ -45,6 +69,8 @@ class RecommendationService:
                      if not is_excluded(session.get(CatalogItem, card["movie_id"]), excluded)]
             return RecommendationState(task_id=task.id, batch_id=task.batch_id, status=task.status,
                                        strategy=task.strategy,
+                                       mode=task.mode, profile_version=task.profile_version,
+                                       profile_summary=task.profile_snapshot["summary"] if task.profile_snapshot else None,
                                        request_text=batch.request_text, target_count=task.target_count,
                                        criteria=task.criteria, cards=cards,
                                        needs_refresh=task.status == "succeeded" and len(cards) != task.target_count,

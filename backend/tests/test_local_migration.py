@@ -47,5 +47,8 @@ def test_nomination_migration_keeps_old_task_strategy_and_payload(settings):
         assert connection.execute(text("SELECT strategy,criteria,status FROM recommendation_tasks WHERE id='old-task'")).one() == (
             "criteria", '{"directors":[]}', "prepared",
         )
+        assert connection.execute(text("SELECT mode,profile_version,profile_snapshot FROM recommendation_tasks WHERE id='old-task'")).one() == (
+            "request", None, None,
+        )
         assert connection.execute(text("PRAGMA foreign_key_check")).all() == []
     engine.dispose()

@@ -123,6 +123,9 @@ class RecommendationState(BaseModel):
     target_count: int
     criteria: dict | None
     strategy: str
+    mode: Literal["request", "personalized"]
+    profile_version: int | None
+    profile_summary: str | None
     cards: list[RecommendationCard]
     needs_refresh: bool
     workflow_run_id: str | None

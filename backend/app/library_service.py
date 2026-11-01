@@ -14,6 +14,7 @@ from app.library_schemas import LibraryCounts, LibraryEntry, LibraryPage, Librar
 from app.profile_record_models import ProfileRecord
 from app.profile_records import sync_profile_record
 from app.profile_models import ProfileJob, ProfileVersion
+from app.recommendation_rules import clear_personalized_history
 
 
 def entry(item: UserItem, work: CatalogItem, record: ProfileRecord | None) -> LibraryEntry:
@@ -83,6 +84,7 @@ class LibraryService:
 
     def clear(self) -> int:
         with Session(self.engine) as session:
+            clear_personalized_history(session)
             session.execute(delete(ProfileVersion))
             session.execute(delete(ProfileJob))
             result = session.execute(delete(UserItem))

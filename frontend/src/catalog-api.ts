@@ -19,10 +19,14 @@ export type Detail = Candidate & {
 export type SearchResult = { items: Candidate[]; page: number; total_pages: number }
 export type CatalogPage = { items: Detail[]; page: number; total: number }
 
+export class ApiError extends Error {
+  constructor(message: string, public status: number) { super(message) }
+}
+
 export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch('/api' + path, options)
   const data = await response.json()
-  if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : '请求失败，请检查输入后重试。')
+  if (!response.ok) throw new ApiError(typeof data.detail === 'string' ? data.detail : '请求失败，请检查输入后重试。', response.status)
   return data as T
 }
 

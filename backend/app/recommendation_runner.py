@@ -1,15 +1,17 @@
 import asyncio
 import logging
 import time
+import json
 
 import httpx
 from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from app.config import Settings
 from app.dify_client import DifyClient, DifyWorkflowError
-from app.recommendation_models import RecommendationBatch
+from app.recommendation_models import RecommendationBatch, RecommendationTask
 from app.recommendation_rules import AI_NOMINATION
 from app.recommendation_schemas import RecommendationSelection, RecommendationState
 from app.recommendation_service import RecommendationService, task_row
@@ -31,12 +33,14 @@ class RecommendationRunner:
         return self.service.state(task_id)
 
     def start(self, task_id: str) -> RecommendationState:
-        if not self.settings.dify_request_api_key:
-            raise HTTPException(503, "请配置 DIFY_REQUEST_API_KEY 并发布 movie-request Workflow。")
         if not self.settings.movie_internal_token:
             raise HTTPException(503, "请配置 MOVIE_INTERNAL_TOKEN，并在 Dify 工具中填写相同值。")
         with Session(self.service.engine) as session:
             task = task_row(session, task_id)
+            key = self.settings.dify_personalized_api_key if task.mode == "personalized" else self.settings.dify_request_api_key
+            if not key:
+                name = "DIFY_PERSONALIZED_API_KEY" if task.mode == "personalized" else "DIFY_REQUEST_API_KEY"
+                raise HTTPException(503, f"请配置 {name} 并发布对应的推荐 Workflow。")
             if task.strategy != AI_NOMINATION:
                 raise HTTPException(409, "旧任务采用旧检索策略，请重新提交原始需求创建新任务。")
             if task.status not in {"prepared", "failed"}:
@@ -57,8 +61,15 @@ class RecommendationRunner:
             with Session(self.service.engine) as session:
                 task = task_row(session, task_id)
                 batch = session.get(RecommendationBatch, task.batch_id)
-                inputs = {"task_id": task_id, "request_text": batch.request_text, "target_count": task.target_count}
-            result = await self.client.run_workflow(self.settings.dify_request_api_key.get_secret_value(), inputs)
+                mode, snapshot = task.mode, task.profile_snapshot
+                inputs = {"task_id": task_id, "target_count": task.target_count}
+                if mode == "request":
+                    inputs["request_text"] = batch.request_text
+            key = self.settings.dify_personalized_api_key if mode == "personalized" else self.settings.dify_request_api_key
+            if mode == "personalized":
+                file_id = await self.client.upload_text(key.get_secret_value(), json.dumps(snapshot, ensure_ascii=False, indent=2))
+                inputs["profile_files"] = [{"type": "document", "transfer_method": "local_file", "upload_file_id": file_id}]
+            result = await self.client.run_workflow(key.get_secret_value(), inputs)
             selection = RecommendationSelection.model_validate(result.outputs["result"])
             self.service.complete(task_id, selection, result.workflow_run_id)
         except asyncio.CancelledError:
@@ -80,6 +91,16 @@ class RecommendationRunner:
 
     async def close(self) -> None:
         pending = list(self.tasks.values())
+        for task in pending:
+            task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
+
+    async def cancel_personalized(self) -> None:
+        with Session(self.service.engine) as session:
+            ids = list(session.scalars(select(RecommendationTask.id).where(
+                RecommendationTask.mode == "personalized", RecommendationTask.id.in_(list(self.tasks)),
+            )))
+        pending = [self.tasks[task_id] for task_id in ids]
         for task in pending:
             task.cancel()
         await asyncio.gather(*pending, return_exceptions=True)

@@ -2,7 +2,7 @@
 
 基于 React、FastAPI、SQLite 和 Dify 的本地电影推荐项目。
 
-当前完成 **最小正式工程、模块 2 作品资料与身份匹配、模块 3 我的片库、模块 4 豆瓣 JSON 导入**。支持电影和剧集各季的搜索与详情、个人想看／看过、可选整数星评分，以及导入进度、逐条结果、暂停和继续。保留资料缓存、来源映射、健康检查和 Dify SSE 客户端。模块 5 已接入 Dify Chatflow 画像生成、版本持久化与前端展示；模块 6 已接入 AI 选片前端，推荐后端已改为单 Agent 提名核实；Dify 待按新版工具切换发布。
+当前完成 **最小正式工程、作品资料、我的片库、豆瓣 JSON 导入和观影画像构建**。模块 6 按需求推荐已接入单 Agent 提名、工具核实与真实卡片；模块 7 按画像推荐的前后端已实现，待创建发布独立 Dify Workflow 并填写 DIFY_PERSONALIZED_API_KEY 后联调。两种推荐模式复用 verify_movies，任务和结果独立保存。
 
 ## 目录
 
@@ -106,7 +106,7 @@ npm run dev
 
 右侧星级、分数或“未评分”区域可点击，打开当前影片的评论小卡片；没有评论时显示“暂无评论”。弹卡支持关闭按钮、Esc 和点击卡片外关闭。左侧名称继续打开来源链接。标记看过的评分卡片提供选填评论框；跳过评分时也保存已填写的评论，不增加对已有看过记录的编辑功能。
 
-片单标题右侧提供“清空片库”按钮，确认后移除全部想看、看过、个人评分、评论及关联的六字段资料，列表和数量归零。公开作品资料缓存及豆瓣来源身份映射保留，供重新导入复用。
+片单标题右侧提供“清空片库”按钮，确认后移除全部想看、看过、个人评分、评论、六字段资料及画像，同时取消本地运行中的画像推荐并删除其任务、结果、核实记录和画像快照。按需求推荐记录保留。公开作品资料缓存及豆瓣来源身份映射保留，供重新导入复用。
 
 | 方法 | 路径 | 用途 |
 |---|---|---|
@@ -160,7 +160,7 @@ npm run dev
 - DIFY_REQUEST_API_KEY：按本次需求推荐 Workflow 的 Key，模块 6 配置。
 - DIFY_PERSONALIZED_API_KEY：按画像推荐 Workflow 的 Key，模块 7 配置。
 
-画像功能需要 DIFY_PROFILE_API_KEY；两个推荐 Key 可暂留空。旧连通检查使用独立的 DIFY_SMOKE_API_KEY 和 MOVIE_INTERNAL_TOKEN，画像接口不依赖这两个配置。
+画像功能需要 DIFY_PROFILE_API_KEY；按需求和按画像推荐分别需要 DIFY_REQUEST_API_KEY、DIFY_PERSONALIZED_API_KEY，并使用 MOVIE_INTERNAL_TOKEN 认证工具回调。旧连通检查使用独立的 DIFY_SMOKE_API_KEY 和 MOVIE_INTERNAL_TOKEN，画像构建接口不依赖这两个配置。
 
 修改配置后重启后端。
 
@@ -255,9 +255,9 @@ cd backend
 
 ## 当前推荐策略：Agent 提名，工具核实
 
-2026-11-01 已实现新后端，数据库版本 0011。Dify 需按本地 private_data/request/05_单Agent正式配置指引.md 更新后发布，当前后端不再允许新任务走旧条件登记和 Discover 搜索链路。
+2026-11-01 已实现并联调单 Agent 提名核实，迁移 0011 建立核实日志。当前数据库版本为 0012，增加推荐模式及画像快照。新任务不走旧条件登记和 Discover 搜索链路。
 
-新画布为“开始 → 经典 Agent → 结果 Code → Output”。Agent 根据电影知识提名，调用 verify_movies 核实，再选择最终结果。后端只查提名电影，不自动生成热门候选、不自动放宽硬条件；前端请求、轮询与卡片继续复用。目标数量仍固定 3。
+新画布为“开始 → Agent → 结果 Code → Output”。Agent 根据电影知识提名，调用 verify_movies 核实，再选择最终结果。后端只查提名电影，不自动生成热门候选、不自动放宽硬条件；前端请求、轮询与卡片继续复用。目标数量仍固定 3。本机使用新版 Agent；画像模式需要其文件读取能力。
 
 | 方法 | 路径 | 用途 |
 |---|---|---|
@@ -309,7 +309,7 @@ cd backend
 
 ## AI 选片页面
 
-点击主导航“AI选片”，输入当前观影需求，或点选示例填入输入框，再点击“推荐电影”。布局沿用墨刀原型的白色面板、灰色工作区和砖红配色；桌面三列卡片，小屏自动调整列数。按画像推荐入口暂未开放。
+点击主导航“AI选片”，可选择按需求推荐或按画像推荐。需求模式输入原话或点选示例，画像模式显示画像版本和可展开摘要。布局沿用墨刀原型的白色面板、灰色工作区和砖红配色；桌面三列卡片，小屏自动调整列数。两种模式分别保存当前任务和结果。
 
 页面调用 POST /recommendations/request，按实际任务状态显示等待，每两秒查询一次，完成后停止。生成期间禁用输入和重复提交；失败显示后端错误并提供“重试本次推荐”。状态查询失败时提供“重新查询”，只读取当前任务，避免误触发新的模型调用。
 
@@ -327,6 +327,28 @@ cd backend
 Dify Agent 的失败输出约定为 {"movie_ids":[],"reasons":[],"error":"具体原因"}，成功 error 可省略或为 null。最后的 Code 针对已出现的“空结果 JSON 后附说明”使用 JSONDecoder.raw_decode，将说明保留为 error。后端将该原因作为任务错误返回，避免候选不足被掩盖为 JSON Extra data。画布中的解析提示词、Agent 指令和最后 Code 需同步更新发布，本地步骤见 private_data/request/04_导演检索与失败输出修复.md；已固定旧条件的失败任务应通过重新提交需求创建新任务。
 
 2026-11-01：14 项相关回归通过；真实 TMDB 独立验收识别李沧东人物 ID 96657，结合当前 416 条看过身份排除，得到三条已核对导演署名的候选。没有调用模型或改动日常片库。此结果验证检索，不代替 Dify 更新发布后的完整推荐验收。
+
+## 按画像推荐
+
+模块 7 复用提名核实与卡片链路，新增独立 movie-personalized Workflow。任务创建时固定完整画像及版本；失败重试沿用原快照，新建任务使用最新画像。没有画像时返回明确提示，不调用模型；画像重建不修改已有推荐的快照。
+
+迁移 0012 为 recommendation_tasks 增加 mode、profile_version、profile_snapshot；旧任务默认为 request，原有结果保留。首次升级执行 `alembic upgrade head`。
+
+| 方法 | 路径 | 用途 |
+|---|---|---|
+| POST | /recommendations/personalized/contexts | 无请求体，固定当前画像创建调试任务，不调用模型 |
+| POST | /recommendations/personalized | 无请求体，固定画像并运行正式 Workflow |
+| GET | /recommendations/tasks/{task_id}/profile-input | 返回该画像推荐任务的完整快照，供预览导出；需求任务拒绝读取 |
+
+开始节点必填 task_id（文本）、target_count（数字）、profile_files（文件列表，TXT 文档，最多一个）。后端用 DIFY_PERSONALIZED_API_KEY 上传完整 JSON 文本文件，再以 local_file 引用传入 profile_files。Agent 任务区插入文件变量，下载并读取全文后提名。不要改成 profile_json 长字符串：本机新版 Agent 的普通文本上下文在 2000 字符后截断；文件变量使用下载映射。最后 Code 继续使用 backend/dify_nodes/parse_recommendation_result.py，Output 返回 result 对象。
+
+画像偏好通常是软偏好，首次 verify_movies 的 constraints 通常为 {}；不把所有偏好叠加为硬筛选，不把 less_preferred 自动变成屏蔽。最终影片必须来自本任务 eligible_movie_ids。想看可推荐，已看过排除；不足三部显示原因。按需求模式不读取、上传或保存画像。
+
+清空片库会同步取消本地画像推荐调用，删除画像推荐的任务、卡片结果、核实日志和快照；按需求推荐历史保留。此操作不删除 Dify 工作流运行日志和上传文件。远端 Workflow 停止与其他交互生命周期仍留后续模块。
+
+本地详细配置、完整 Agent 指令、真实预览任务及画像文件位于 private_data/personalized，仅本地保存。当前代码完成模拟 HTTP 验证，真实模型验收待用户发布 movie-personalized、填写对应 Key 并重启后端。
+
+2026-11-01 验证：124 项后端测试通过，前端 TypeScript／Vite 构建通过。新增用例覆盖完整画像文件、快照固定、独立 Key、失败重试、重启持久化及清空时取消和删除；旧迁移任务保留 request 模式。实际数据库备份后升级至 0012，521 条片库及原有画像／推荐数据摘要一致。前端代理与已有三张真实卡片的服务端渲染检查通过；没有新增模型调用，浏览器交互仍需用户验收。
 
 ## Git
 

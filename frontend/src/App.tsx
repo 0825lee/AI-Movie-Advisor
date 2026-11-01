@@ -13,6 +13,6 @@ export default function App() {
     </header>
     {page === 'library' && <LibraryPage />}
     {page === 'health' && <HealthStatus />}
-    <div hidden={page !== 'picks'}><AIPicksPage active={page === 'picks'} /></div>
+    <div hidden={page !== 'picks'}><AIPicksPage active={page === 'picks'} onGoLibrary={() => setPage('library')} /></div>
   </div>
 }

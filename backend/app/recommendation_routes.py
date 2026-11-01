@@ -49,6 +49,22 @@ async def recommend(body: RecommendationRequest, service: Service, runner: Runne
     return runner.start(service.create(body.request_text))
 
 
+@router.post("/personalized/contexts", response_model=RecommendationState)
+def prepare_personalized(service: Service) -> RecommendationState:
+    return service.state(service.create_personalized())
+
+
+@router.post("/personalized", response_model=RecommendationState)
+async def recommend_personalized(service: Service, runner: Runner) -> RecommendationState:
+    return runner.start(service.create_personalized())
+
+
+@router.get("/tasks/{task_id}/profile-input")
+def personalized_profile_input(task_id: str, service: Service) -> dict:
+    """仅返回这个画像推荐任务已固定的快照，供 Dify 预览导出。"""
+    return service.profile_input(task_id)
+
+
 @router.get("/tasks/{task_id}", response_model=RecommendationState)
 def read_task(task_id: str, runner: Runner) -> RecommendationState:
     return runner.state(task_id)

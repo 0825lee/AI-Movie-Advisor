@@ -16,6 +16,7 @@ def settings(tmp_path: Path) -> Settings:
         dify_smoke_api_key=None,
         dify_profile_api_key=None,
         dify_request_api_key=None,
+        dify_personalized_api_key=None,
         tmdb_read_access_token=None,
     )
 

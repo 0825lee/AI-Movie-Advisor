@@ -48,6 +48,7 @@ def get_profile_input(service: Service) -> dict:
 async def clear_library(service: Service, request: Request) -> ClearLibraryResult:
     """清空想看、看过及个人评分，保留作品资料缓存。"""
     await request.app.state.profile_runner.reset()
+    await request.app.state.recommendation_runner.cancel_personalized()
     return ClearLibraryResult(deleted=service.clear())
 
 

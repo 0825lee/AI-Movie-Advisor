@@ -1,13 +1,23 @@
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.catalog_models import CatalogItem
 from app.catalog_service import normalized_name, work_match_keys
 from app.library_models import UserItem
-from app.recommendation_models import BlockedMovie, RecommendationTask
+from app.recommendation_models import BlockedMovie, MovieVerification, RecommendationBatch, RecommendationCandidate, RecommendationTask
 
 AI_NOMINATION = "ai_nomination"
+
+
+def clear_personalized_history(session: Session) -> None:
+    task_ids = select(RecommendationTask.id).where(RecommendationTask.mode == "personalized")
+    batch_ids = list(session.scalars(select(RecommendationTask.batch_id).where(RecommendationTask.mode == "personalized")))
+    session.execute(delete(MovieVerification).where(MovieVerification.task_id.in_(task_ids)))
+    session.execute(delete(RecommendationCandidate).where(RecommendationCandidate.task_id.in_(task_ids)))
+    session.execute(delete(RecommendationTask).where(RecommendationTask.mode == "personalized"))
+    session.execute(delete(RecommendationBatch).where(RecommendationBatch.id.in_(batch_ids),
+        ~select(RecommendationTask.id).where(RecommendationTask.batch_id == RecommendationBatch.id).exists()))
 
 
 def exclusions(session: Session, shown_ids: list[int] = ()) -> tuple[set[int], set[str]]:
