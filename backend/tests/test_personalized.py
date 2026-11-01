@@ -65,7 +65,7 @@ def personalized(recommendations):
             return httpx.Response(200, stream=ChunkedStream(sse({"event": "error", "message": "model unavailable"}).encode()))
         service = app.state.recommendation_runner.service
         verified = await MovieVerificationService(engine, service.catalog).verify(VerifyMoviesInput(
-            task_id=inputs["task_id"], constraints={}, movies=[{"title": f"Film {i}", "year": 2010} for i in range(1, 4)]))
+            task_id=inputs["task_id"], constraints={}, movies=[{"title": f"Film {i}", "year": 2010} for i in calls.get("proposal_ids", range(1, 4))]))
         result = {"movie_ids": verified.eligible_movie_ids, "reasons": ["符合本次推荐依据"] * 3}
         return httpx.Response(200, stream=ChunkedStream(sse({"event": "workflow_finished", "task_id": "remote-task",
             "workflow_run_id": "personalized-run", "data": {"status": "succeeded", "outputs": {"result": result}}}).encode()))

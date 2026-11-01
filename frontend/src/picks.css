@@ -70,3 +70,7 @@
 .pick-source-link:hover { color: #a64b32; background: #fdfbfa; }
 @media (max-width: 1120px) { .picks-hero { padding: 40px 32px 28px; } .picks-workspace { padding: 32px; } .picks-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .picks-hero { padding: 32px 20px 24px; } .picks-hero h1 { font-size: 34px; } .picks-mode-row { align-items: flex-start; flex-direction: column; gap: 16px; margin-top: 24px; } .picks-workspace { padding: 24px 20px 40px; } .picks-demand-panel { padding: 22px; } .picks-form-footer { align-items: stretch; flex-direction: column; gap: 20px; } .picks-submit { width: 100%; } .picks-grid { grid-template-columns: 1fr; } .picks-status { padding: 28px 20px; } }
+.pick-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 20px 22px 0; }
+.picks-result-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.pick-actions .text-button { color: #8e8e96; }
+.pick-actions button:disabled { opacity: .55; cursor: default; }

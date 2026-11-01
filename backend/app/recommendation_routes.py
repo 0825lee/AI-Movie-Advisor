@@ -1,13 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.openapi.utils import get_openapi
 
 from app.auth import require_internal_token
 from app.catalog_routes import get_catalog
 from app.catalog_service import CatalogService
 from app.recommendation_runner import RecommendationRunner
-from app.recommendation_schemas import (MovieDetailsInput, MovieSearchInput, RecommendationRequest,
+from app.recommendation_schemas import (BlockedMoviePage, MovieDetailsInput, MovieSearchInput, RecommendationRequest,
                                         RecommendationState, RequestCriteria, VerificationResult, VerifyMoviesInput)
 from app.recommendation_service import RecommendationService
 from app.verification_service import MovieVerificationService
@@ -68,6 +68,21 @@ def personalized_profile_input(task_id: str, service: Service) -> dict:
 @router.get("/tasks/{task_id}", response_model=RecommendationState)
 def read_task(task_id: str, runner: Runner) -> RecommendationState:
     return runner.state(task_id)
+
+
+@router.get("/blocked", response_model=BlockedMoviePage)
+def list_blocked(service: Service, query: str = "", page: int = Query(default=1, ge=1)) -> BlockedMoviePage:
+    return service.blocked(query, page)
+
+
+@router.post("/tasks/{task_id}/movies/{movie_id}/block", response_model=RecommendationState)
+def block_movie(task_id: str, movie_id: int, service: Service) -> RecommendationState:
+    return service.block(task_id, movie_id)
+
+
+@router.post("/tasks/{task_id}/next", response_model=RecommendationState)
+async def next_batch(task_id: str, service: Service, runner: Runner) -> RecommendationState:
+    return runner.start(service.next_batch(task_id))
 
 
 @router.get("/tasks/{task_id}/verifications")

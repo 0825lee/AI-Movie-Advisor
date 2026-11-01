@@ -7,10 +7,12 @@ import WorkDialog from './components/WorkDialog'
 import ImportDialog from './components/ImportDialog'
 import CommentDialog from './components/CommentDialog'
 import ProfilePanel from './components/ProfilePanel'
+import BlockedMoviesList from './components/BlockedMoviesList'
 
 export default function LibraryPage() {
-  const [status, setStatus] = useState<LibraryStatus>('watched')
+  const [status, setStatus] = useState<LibraryStatus | 'blocked'>('watched')
   const [query, setQuery] = useState('')
+  const [blockedCount, setBlockedCount] = useState<number | null>(null)
   const [draft, setDraft] = useState('')
   const [page, setPage] = useState(1)
   const [revision, setRevision] = useState(0)
@@ -25,6 +27,7 @@ export default function LibraryPage() {
   const importChanged = useCallback(() => setRevision(n => n + 1), [])
 
   useEffect(() => {
+    if (status === 'blocked') { setLoading(false); setError(''); return }
     let active = true
     setLoading(true); setError('')
     const params = new URLSearchParams({ status, query, page: String(page) })
@@ -40,26 +43,27 @@ export default function LibraryPage() {
     setStatus(item.status); setQuery(''); setDraft(''); setPage(1); setRevision(n => n + 1)
   }
   async function clearLibrary() {
-    if (!window.confirm('清空片库会移除全部想看、看过、评分、评论、画像、画像推荐记录及 Dify 画像会话。确认清空？')) return
+    if (!window.confirm('清空片库会移除全部想看、看过、评分、评论、画像、画像推荐记录、不感兴趣片单及 Dify 画像会话。确认清空？')) return
     setClearing(true); setError('')
     try {
       await api<{ deleted: number }>('/library', { method: 'DELETE' })
-      setQuery(''); setDraft(''); setPage(1); setRevision(n => n + 1)
+      setStatus('watched'); setBlockedCount(0); setQuery(''); setDraft(''); setPage(1); setRevision(n => n + 1)
     } catch (reason) { setError((reason as Error).message) }
     finally { setClearing(false) }
   }
-  const count = data ? data.counts.wish + data.counts.watched : null
+  const count = status === 'blocked' ? blockedCount : data ? data.counts.wish + data.counts.watched : null
   const pages = data ? Math.ceil(data.total / data.page_size) : 0
 
   return <main className="library-main">
     <section className="library-hero"><div><div className="eyebrow"><span />私人片库</div><h1>我的片库</h1><p>电影使人的寿命延长了三倍。</p></div><div className="library-hero-actions"><button className="import-button" onClick={() => setImportOpen(true)}><span aria-hidden="true">↥</span>{importRunning ? '导入中…' : '导入豆瓣记录'}</button><button className="primary-button" disabled={importRunning} onClick={() => setWorkRequest({})}><span aria-hidden="true">＋</span>手动添加</button></div></section>
     <section className="library-workspace">
       <section className="library-list-panel" aria-labelledby="library-list-title" aria-busy={loading || clearing}>
-        <div className="library-list-heading"><div className="library-title-row"><h2 id="library-list-title">片单</h2><span className="total-badge">共 {count ?? '—'} 部</span><button className="clear-library-button" disabled={loading || clearing || importRunning} onClick={() => void clearLibrary()}>{clearing ? '清空中…' : '清空片库'}</button></div><p>按标记时间排序</p>
-          <div className="library-tabs" role="tablist" aria-label="片库状态">{(['wish', 'watched'] as const).map(tab => <button key={tab} id={'tab-' + tab} role="tab" aria-selected={status === tab} aria-controls="library-entries" disabled={loading} className={status === tab ? 'active' : ''} onClick={() => { setStatus(tab); setPage(1) }}>{tab === 'wish' ? '想看' : '看过'}（{data ? data.counts[tab] : '—'}）</button>)}</div>
-          <form className="library-filters" onSubmit={search}><label className="sr-only" htmlFor="library-query">搜索个人片库</label><div className="local-search"><input id="library-query" value={draft} disabled={loading} onChange={e => setDraft(e.target.value)} placeholder="搜索片库中的作品" /><button aria-label="搜索片库" disabled={loading}><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg></button></div></form>
+        <div className="library-list-heading"><div className="library-title-row"><h2 id="library-list-title">片单</h2><span className="total-badge">共 {count ?? '—'} 部</span><button className="clear-library-button" disabled={loading || clearing || importRunning} onClick={() => void clearLibrary()}>{clearing ? '清空中…' : '清空片库'}</button></div><p>{status === 'blocked' ? '按加入时间排序' : '按标记时间排序'}</p>
+          <div className="library-tabs" role="tablist" aria-label="片库状态">{(['wish', 'watched', 'blocked'] as const).map(tab => <button key={tab} id={'tab-' + tab} role="tab" aria-selected={status === tab} aria-controls="library-entries" disabled={loading} className={status === tab ? 'active' : ''} onClick={() => { setStatus(tab); setPage(1) }}>{tab === 'blocked' ? '不感兴趣' : <>{tab === 'wish' ? '想看' : '看过'}（{data ? data.counts[tab] : '—'}）</>}</button>)}</div>
+          {status !== 'blocked' && <form className="library-filters" onSubmit={search}><label className="sr-only" htmlFor="library-query">搜索个人片库</label><div className="local-search"><input id="library-query" value={draft} disabled={loading} onChange={e => setDraft(e.target.value)} placeholder="搜索片库中的作品" /><button aria-label="搜索片库" disabled={loading}><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg></button></div></form>}
         </div>
-        <div className="library-entries" id="library-entries" role="tabpanel" aria-labelledby={'tab-' + status}>
+        {status === 'blocked' && error && <p className="profile-error" role="alert">{error}</p>}
+        {status === 'blocked' ? <BlockedMoviesList onCount={setBlockedCount} /> : <><div className="library-entries" id="library-entries" role="tabpanel" aria-labelledby={'tab-' + status}>
           {error ? <div className="library-empty"><p role="alert">{error}</p><button className="quiet-button" onClick={() => setRevision(n => n + 1)}>重新加载</button></div>
             : loading ? <div className="library-empty" role="status">正在读取片单…</div>
             : data && data.items.length > 0 ? <>{status === 'wish' && <div className="list-explanation">想看的下一部，也许就在这里</div>}<ul>{data.items.map((item, index) => {
@@ -75,12 +79,12 @@ export default function LibraryPage() {
         <div className="library-pagination"><span>{data && data.total > 0 ? `${(page - 1) * data.page_size + 1}–${Math.min(page * data.page_size, data.total)} / ${data.total}` : '0 / 0'}</span><div><button aria-label="上一页" disabled={loading || page <= 1} onClick={() => setPage(p => p - 1)}>‹</button>{Array.from({ length: Math.min(pages, 5) }, (_, i) => {
           const n = Math.max(1, Math.min(page - 2, pages - 4)) + i
           return <button key={n} className={n === page ? 'active' : ''} aria-label={`第 ${n} 页`} aria-current={n === page ? 'page' : undefined} disabled={loading} onClick={() => setPage(n)}>{n}</button>
-        })}<button aria-label="下一页" disabled={loading || page >= pages} onClick={() => setPage(p => p + 1)}>›</button></div></div>
+        })}<button aria-label="下一页" disabled={loading || page >= pages} onClick={() => setPage(p => p + 1)}>›</button></div></div></>}
       </section>
       <ProfilePanel revision={revision} />
     </section>
     {workRequest && <WorkDialog request={workRequest} onClose={() => setWorkRequest(null)} onSaved={saved} />}
     {commentEntry && <CommentDialog entry={commentEntry} onClose={() => setCommentEntry(null)} />}
-    <ImportDialog open={importOpen} libraryCount={count ?? 0} onClose={() => setImportOpen(false)} onChanged={importChanged} onRunningChange={setImportRunning} />
+    <ImportDialog open={importOpen} libraryCount={data ? data.counts.wish + data.counts.watched : 0} onClose={() => setImportOpen(false)} onChanged={importChanged} onRunningChange={setImportRunning} />
   </main>
 }

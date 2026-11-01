@@ -113,6 +113,20 @@ class RecommendationCard(BaseModel):
     movie_id: int
     reason: str
     movie: CatalogDetail
+    library_status: Literal["wish", "watched"] | None = None
+
+
+class BlockedMovieEntry(BaseModel):
+    movie_id: int
+    movie: CatalogDetail
+    created_at: int
+
+
+class BlockedMoviePage(BaseModel):
+    items: list[BlockedMovieEntry]
+    total: int
+    page: int
+    page_size: int = 12
 
 
 class RecommendationState(BaseModel):

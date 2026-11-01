@@ -1,6 +1,10 @@
 import type { Detail } from './catalog-api'
 
-export type RecommendationCardData = { movie_id: number; reason: string; movie: Detail }
+export type RecommendationCardData = { movie_id: number; reason: string; movie: Detail; library_status: 'wish' | 'watched' | null }
+export type BlockedMoviePage = {
+  items: { movie_id: number; movie: Detail; created_at: number }[]
+  total: number; page: number; page_size: number
+}
 export type RecommendationMode = 'request' | 'personalized'
 export type RecommendationTask = {
   task_id: string; batch_id: string

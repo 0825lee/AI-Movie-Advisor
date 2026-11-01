@@ -36,6 +36,7 @@ body { background: #eeeff1; }
 .library-tabs button { position: relative; padding: 4px 0 14px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; color: #74747d; font-size: 14px; font-weight: 500; cursor: pointer; }
 .library-tabs button.active { color: #a64b32; border-bottom-color: #a64b32; }
 .library-filters { display: flex; gap: 10px; padding: 17px 0 16px; }
+.blocked-filters { margin: 0 28px; }
 .local-search { display: flex; align-items: center; flex: 1; min-width: 0; border: 1px solid #e7e7eb; border-radius: 7px; height: 34px; }
 .local-search input { width: 100%; min-width: 0; height: 32px; border: 0; background: transparent; padding: 0 10px; color: #55555d; font-size: 11px; border-radius: 7px; outline-color: #a64b32; }
 .local-search input::placeholder { color: #b0b0b7; }
@@ -163,6 +164,7 @@ body { background: #eeeff1; }
   .library-workspace { padding: 30px 36px 45px; gap: 20px; }
   .library-list-heading, .profile-panel { padding: 24px; }
   .library-list-heading { padding-bottom: 0; }
+  .blocked-filters { margin-inline: 24px; }
   .library-row { gap: 10px; padding: 10px; }
   .row-number { width: 22px; }
   .row-rating { gap: 6px; }
@@ -186,6 +188,9 @@ body { background: #eeeff1; }
   .library-hero-actions .primary-button, .import-button { font-size: 12px; }
   .library-workspace { padding: 22px 16px 35px; gap: 20px; }
   .library-list-heading { padding: 22px 20px 0; }
+  .blocked-filters { margin-inline: 20px; }
+  .library-tabs { gap: 20px; }
+  .library-tabs button { font-size: 12px; white-space: nowrap; }
   .library-row { gap: 8px; padding: 10px 7px; }
   .row-number { font-size: 9px; width: 18px; }
   .row-work strong { font-size: 12px; }

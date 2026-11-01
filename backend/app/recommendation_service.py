@@ -4,16 +4,18 @@ from itertools import product
 from uuid import uuid4
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from app.catalog_models import CatalogItem
 from app.catalog_schemas import CatalogRef
 from app.catalog_service import CatalogService, serialized, work_match_keys
-from app.recommendation_models import RecommendationBatch, RecommendationCandidate, RecommendationTask
+from app.recommendation_models import BlockedMovie, RecommendationBatch, RecommendationCandidate, RecommendationTask
 from app.recommendation_rules import AI_NOMINATION, constraint_mismatch, exclusions, is_excluded, open_task, person_ids, task_row
-from app.recommendation_schemas import RecommendationCard, RecommendationSelection, RecommendationState, RequestCriteria
+from app.recommendation_schemas import (BlockedMovieEntry, BlockedMoviePage, RecommendationCard,
+                                        RecommendationSelection, RecommendationState, RequestCriteria)
+from app.library_service import find_item
 from app.profile_models import ProfileVersion
 
 RELAXATIONS = ["完整条件", "放宽年代", "放宽时长", "放宽国家和语言", "放宽正向类型"]
@@ -59,6 +61,55 @@ class RecommendationService:
                 raise HTTPException(409, "本次需求推荐任务不读取画像。")
             return task.profile_snapshot
 
+    def next_batch(self, task_id: str) -> str:
+        with Session(self.engine) as session:
+            previous = task_row(session, task_id)
+            if previous.status != "succeeded":
+                raise HTTPException(409, "请先完成本次推荐；失败任务请使用重试。")
+            if previous.strategy != AI_NOMINATION:
+                raise HTTPException(409, "旧推荐任务请重新提交需求。")
+            pending = session.scalar(select(RecommendationTask).where(
+                RecommendationTask.batch_id == previous.batch_id,
+                RecommendationTask.status.in_(["prepared", "running"]),
+            ))
+            if pending:
+                if pending.status == "prepared":
+                    return pending.id
+                raise HTTPException(409, "本次推荐已有待完成任务，请先完成该任务。")
+            now, next_id = int(time.time()), str(uuid4())
+            session.add(RecommendationTask(id=next_id, batch_id=previous.batch_id, status="prepared",
+                strategy=AI_NOMINATION, mode=previous.mode, target_count=previous.target_count,
+                criteria=previous.criteria, filters=previous.filters,
+                profile_version=previous.profile_version, profile_snapshot=previous.profile_snapshot,
+                created_at=now, updated_at=now))
+            session.commit()
+        return next_id
+
+    def block(self, task_id: str, movie_id: int) -> RecommendationState:
+        with Session(self.engine) as session:
+            task = task_row(session, task_id)
+            if movie_id not in {card["movie_id"] for card in task.result or []}:
+                raise HTTPException(422, "只能将本次推荐结果中的影片加入不感兴趣。")
+            if session.get(BlockedMovie, movie_id) is None:
+                session.add(BlockedMovie(catalog_id=movie_id, created_at=int(time.time())))
+                session.commit()
+        return self.state(task_id)
+
+    def blocked(self, query: str, page: int) -> BlockedMoviePage:
+        with Session(self.engine) as session:
+            conditions = []
+            if query.strip():
+                conditions.append(or_(CatalogItem.title.icontains(query.strip(), autoescape=True),
+                                      CatalogItem.original_title.icontains(query.strip(), autoescape=True)))
+            total = session.scalar(select(func.count()).select_from(BlockedMovie).join(CatalogItem).where(*conditions))
+            rows = session.execute(select(BlockedMovie, CatalogItem).join(CatalogItem).where(*conditions).order_by(
+                BlockedMovie.created_at.desc(), BlockedMovie.catalog_id.desc(),
+            ).offset((page - 1) * 12).limit(12)).all()
+            return BlockedMoviePage(total=total, page=page, items=[
+                BlockedMovieEntry(movie_id=work.id, movie=serialized(work), created_at=blocked.created_at)
+                for blocked, work in rows
+            ])
+
     def state(self, task_id: str) -> RecommendationState:
         with Session(self.engine) as session:
             task = task_row(session, task_id)
@@ -67,6 +118,9 @@ class RecommendationService:
             excluded = exclusions(session)
             cards = [RecommendationCard.model_validate(card) for card in task.result or []
                      if not is_excluded(session.get(CatalogItem, card["movie_id"]), excluded)]
+            for card in cards:
+                item = find_item(session, session.get(CatalogItem, card.movie_id))
+                card.library_status = item.status if item else None
             return RecommendationState(task_id=task.id, batch_id=task.batch_id, status=task.status,
                                        strategy=task.strategy,
                                        mode=task.mode, profile_version=task.profile_version,
