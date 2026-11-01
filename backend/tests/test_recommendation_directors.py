@@ -25,6 +25,20 @@ def test_valid_result_and_explicit_failure_stay_unchanged():
         main('not json')
 
 
+@pytest.mark.parametrize("prefix,suffix", [
+    ("已核实到足够合格作品，现在开始最终选择。\n\n```json\n", "\n```"),
+    ("```json\n", "\n```"),
+    ("推荐结果如下：\n", ""),
+])
+def test_agent_explanation_and_markdown_wrapper_are_accepted(prefix, suffix):
+    result = {"movie_ids": [638, 700, 696], "reasons": ["a", "b", "c"]}
+    assert main(prefix + json.dumps(result) + suffix)["result"] == result
+
+
+def test_empty_fenced_result_does_not_use_closing_fence_as_error():
+    assert main('```json\n{"movie_ids":[],"reasons":[]}\n```')["result"] == {"movie_ids": [], "reasons": []}
+
+
 def test_director_is_not_relaxed_and_producer_only_films_are_not_candidates(recommendations):
     client, _, calls = recommendations
     calls["rows"] = [1, 2, 3]
