@@ -267,7 +267,7 @@ cd backend
 | POST | /internal/movie-tools/details | get_movie_details；只允许本任务候选的本地 movie_id，要求内部令牌 |
 | GET | /recommendations/tools/openapi.json | 仅暴露上述两个推荐工具的专用 OpenAPI |
 
-后端只向 Workflow 发送 task_id、request_text、target_count，不发送画像或评分历史。Workflow 的 outputs.result 必须是对象，包含 movie_ids 和逐部对应的 reasons 数组；ID 是工具返回的本地 movie_id，不是 TMDB ID。后端检查数量、不重复、候选归属及最新排除状态，再从真实缓存组装海报、简介和演职员卡片。
+后端只向 Workflow 发送 task_id、request_text、target_count，不发送画像或评分历史。Workflow 的 outputs.result 必须是对象，包含 movie_ids 和逐部对应的 reasons 数组；候选不足时返回空数组和 error 说明。ID 是工具返回的本地 movie_id，不是 TMDB ID。后端检查数量、不重复、候选归属及最新排除状态，再从真实缓存组装海报、简介和演职员卡片。
 
 条件包含原始年份／时长描述，以及 year_from/year_to、runtime_min/runtime_max 数值；countries 用 ISO 两位大写代码，languages 用两位小写原语言代码，类型使用 TMDB 中文名称。与前期九字段提示词草稿相比，新增四个数值字段并明确国家／语言代码；本地 private_data/request 提供匹配当前接口的提示词和完整画布步骤。
 
@@ -293,6 +293,15 @@ cd backend
 当前任务 ID 保存在浏览器 sessionStorage，同一浏览器标签页刷新后可恢复；切换页面不重复创建任务，返回 AI 选片时读取最新状态。若某部已被标记看过或屏蔽，结果按后端状态移除并提示重新推荐。此时重新提交创建新需求批次，不作为“换一批”功能。
 
 2026-11-01 验证：前端 TypeScript／Vite 构建通过，前端代理读取用户已成功生成的真实任务返回 200，三张卡片、三份理由和三个海报地址的 React 服务端渲染检查通过，初始需求表单和空状态渲染通过。本轮未新增模型调用，未改动后端或个人片库；页面视觉、点击交互及生成过程由用户在浏览器验收，未声称完成浏览器自动化测试。
+
+
+### 指定导演与失败输出修复
+
+需求条件新增 directors 姓名数组。后端通过 TMDB 人物搜索解析 ID，使用 Discover with_crew 检索，再核对详情中的导演署名；制片或编剧署名不会作为导演命中，导演条件不随年代等正向条件放宽。候选返回真实 directors 资料，最终提交时再次检查。相同导演姓名存在多个人物时明确报错，由用户补充姓名。
+
+Dify Agent 的失败输出约定为 {"movie_ids":[],"reasons":[],"error":"具体原因"}，成功 error 可省略或为 null。最后的 Code 针对已出现的“空结果 JSON 后附说明”使用 JSONDecoder.raw_decode，将说明保留为 error。后端将该原因作为任务错误返回，避免候选不足被掩盖为 JSON Extra data。画布中的解析提示词、Agent 指令和最后 Code 需同步更新发布，本地步骤见 private_data/request/04_导演检索与失败输出修复.md；已固定旧条件的失败任务应通过重新提交需求创建新任务。
+
+2026-11-01：14 项相关回归通过；真实 TMDB 独立验收识别李沧东人物 ID 96657，结合当前 416 条看过身份排除，得到三条已核对导演署名的候选。没有调用模型或改动日常片库。此结果验证检索，不代替 Dify 更新发布后的完整推荐验收。
 
 ## Git
 

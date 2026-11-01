@@ -24,7 +24,8 @@ AUTH = {"X-Internal-Token": "test-internal-token"}
 def recommendations(migrated_settings):
     migrated_settings.tmdb_read_access_token = SecretStr("tmdb-test")
     app = create_app(migrated_settings)
-    calls = {"discover": [], "detail": [], "workflow": [], "rows": list(range(1, 17)), "fail": False}
+    calls = {"discover": [], "detail": [], "workflow": [], "rows": list(range(1, 17)), "fail": False,
+             "people": [{"id": 9, "name": "Director"}], "director_mismatch_ids": []}
 
     def handler(request):
         path = request.url.path
@@ -32,6 +33,8 @@ def recommendations(migrated_settings):
             return httpx.Response(200, json={"images": {"secure_base_url": "https://image.tmdb.org/t/p/"}})
         if path.endswith("/genre/movie/list"):
             return httpx.Response(200, json={"genres": [{"id": 18, "name": "剧情"}, {"id": 27, "name": "恐怖"}]})
+        if path.endswith("/search/person"):
+            return httpx.Response(200, json={"results": calls["people"]})
         if path.endswith("/discover/movie"):
             params = dict(request.url.params)
             calls["discover"].append(params)
@@ -42,7 +45,10 @@ def recommendations(migrated_settings):
         if "/movie/" in path:
             movie_id = int(path.rsplit("/", 1)[-1])
             calls["detail"].append(movie_id)
-            return httpx.Response(200, json=movie(movie_id, f"Film {movie_id}"))
+            data = movie(movie_id, f"Film {movie_id}")
+            if movie_id in calls["director_mismatch_ids"]:
+                data["credits"]["crew"] = [{"id": 9, "name": "Director", "job": "Producer"}]
+            return httpx.Response(200, json=data)
         raise AssertionError(path)
 
     with TestClient(app) as client:

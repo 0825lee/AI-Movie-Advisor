@@ -19,6 +19,7 @@ class RequestCriteria(BaseModel):
     languages: list[LanguageCode] = Field(default_factory=list)
     preferred_genres: list[str] = Field(default_factory=list)
     excluded_genres: list[str] = Field(default_factory=list)
+    directors: list[str] = Field(default_factory=list)
     themes: list[str] = Field(default_factory=list)
     moods: list[str] = Field(default_factory=list)
     other_exclusions: list[str] = Field(default_factory=list)
@@ -48,6 +49,7 @@ class MovieDetailsInput(BaseModel):
 class RecommendationSelection(BaseModel):
     movie_ids: list[int]
     reasons: list[str]
+    error: str | None = None
 
 
 class RecommendationCard(BaseModel):

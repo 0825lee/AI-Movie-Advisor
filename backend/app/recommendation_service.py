@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.catalog_models import CatalogItem
 from app.catalog_schemas import CatalogRef
-from app.catalog_service import CatalogService, serialized, work_match_keys
+from app.catalog_service import CatalogService, normalized_name, serialized, work_match_keys
 from app.library_models import UserItem
 from app.recommendation_models import BlockedMovie, RecommendationBatch, RecommendationCandidate, RecommendationTask
 from app.recommendation_schemas import RecommendationCard, RecommendationSelection, RecommendationState, RequestCriteria
@@ -83,7 +83,7 @@ class RecommendationService:
         with Session(self.engine) as session:
             task = open_task(session, task_id)
             if task.criteria is not None:
-                if task.criteria != payload:
+                if RequestCriteria.model_validate(task.criteria).model_dump() != payload:
                     raise HTTPException(409, "本次任务条件已经固定，不能在检索过程中改写。")
                 return {"task_id": task_id, "criteria": task.criteria, "filters": task.filters}
         genre_ids = {}
@@ -97,13 +97,25 @@ class RecommendationService:
                 raise HTTPException(422, "请使用 TMDB 类型名称：" + "、".join(unknown))
             return list(dict.fromkeys(genre_ids[name] for name in names))
 
+        director_ids = []
+        for name in dict.fromkeys(criteria.directors):
+            response = await self.catalog.tmdb.get("/search/person", query=name, include_adult="false")
+            people = response["results"]
+            exact = [p for p in people if normalized_name(name) in {
+                normalized_name(p["name"]), normalized_name(p.get("original_name") or ""),
+            }]
+            matches = exact or people
+            if len(matches) != 1:
+                raise HTTPException(422, f"未能唯一确定导演“{name}”，请补充其完整姓名或原文姓名。")
+            director_ids.append(matches[0]["id"])
         filters = {"year_from": criteria.year_from, "year_to": criteria.year_to,
                    "runtime_min": criteria.runtime_min, "runtime_max": criteria.runtime_max,
                    "countries": criteria.countries, "languages": criteria.languages,
-                   "genre_ids": resolve(criteria.preferred_genres), "excluded_genre_ids": resolve(criteria.excluded_genres)}
+                   "genre_ids": resolve(criteria.preferred_genres), "excluded_genre_ids": resolve(criteria.excluded_genres),
+                   "director_ids": director_ids}
         with Session(self.engine) as session:
             task = open_task(session, task_id)
-            if task.criteria is not None and task.criteria != payload:
+            if task.criteria is not None and RequestCriteria.model_validate(task.criteria).model_dump() != payload:
                 raise HTTPException(409, "本次任务条件已经固定。")
             task.criteria, task.filters = payload, filters
             session.commit()
@@ -118,17 +130,20 @@ class RecommendationService:
             RecommendationCandidate.relaxation_stage, RecommendationCandidate.catalog_id,
         )).all()
         result, keys = [], set()
+        director_ids = set((task.filters or {}).get("director_ids", []))
         for candidate, work in rows:
             movie_keys = set(work.details.get("match_keys") or work_match_keys(work.details))
             excluded_genres = set((task.filters or {}).get("excluded_genre_ids", []))
             if (is_excluded(work, excluded) or movie_keys.intersection(keys)
-                    or any(genre["id"] in excluded_genres for genre in work.details["genres"])):
+                    or any(genre["id"] in excluded_genres for genre in work.details["genres"])
+                    or (director_ids and not director_ids.intersection(p["id"] for p in work.details["directors"]))):
                 continue
             keys.update(movie_keys)
             result.append({"movie_id": work.id, "tmdb_id": work.tmdb_id, "title": work.title,
                            "original_title": work.original_title, "year": work.year,
                            "overview": work.details["overview"], "runtime": work.details["runtime"],
                            "genres": work.details["genres"], "countries": work.details["countries"],
+                           "directors": work.details["directors"],
                            "relaxation_stage": candidate.relaxation_stage})
         return result
 
@@ -148,6 +163,8 @@ class RecommendationService:
         visited, tried = set(), set()
         for stage in range(len(RELAXATIONS)):
             params = {"include_adult": "false", "include_video": "false", "sort_by": "popularity.desc"}
+            if filters.get("director_ids"):
+                params["with_crew"] = "|".join(map(str, filters["director_ids"]))
             if filters["excluded_genre_ids"]:
                 params["without_genres"] = ",".join(map(str, filters["excluded_genre_ids"]))
             if stage < 1:
@@ -199,6 +216,8 @@ class RecommendationService:
                             for detail in details:
                                 if any(g.id in filters["excluded_genre_ids"] for g in detail.genres):
                                     continue
+                                if filters.get("director_ids") and not set(filters["director_ids"]).intersection(p.id for p in detail.directors):
+                                    continue
                                 if session.get(RecommendationCandidate, (task_id, detail.catalog_id)) is None:
                                     session.add(RecommendationCandidate(task_id=task_id, catalog_id=detail.catalog_id,
                                                                         relaxation_stage=stage))
@@ -237,6 +256,8 @@ class RecommendationService:
         with Session(self.engine) as session:
             task = open_task(session, task_id)
             ids = selection.movie_ids
+            if not ids and not selection.reasons:
+                raise HTTPException(422, selection.error or "没有找到足够符合本次需求的未看过影片，请调整需求后重新推荐。")
             if len(ids) != task.target_count or len(set(ids)) != len(ids) or len(selection.reasons) != len(ids):
                 raise HTTPException(422, "推荐必须包含规定数量的不重复候选及逐部推荐理由。")
             candidates = {item["movie_id"] for item in self.candidates(session, task)}
