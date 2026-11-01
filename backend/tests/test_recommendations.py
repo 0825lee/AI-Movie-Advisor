@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 
 import httpx
 import pytest
@@ -12,7 +13,8 @@ from app.catalog_models import CatalogItem
 from app.library_models import UserItem
 from app.main import create_app
 from app.recommendation_models import BlockedMovie, RecommendationBatch, RecommendationTask
-from app.recommendation_schemas import RecommendationSelection, RequestCriteria
+from app.recommendation_schemas import RecommendationSelection, VerifyMoviesInput
+from app.verification_service import MovieVerificationService
 from test_catalog import movie
 from test_dify_client import ChunkedStream, sse
 from test_profiles import seed
@@ -25,7 +27,8 @@ def recommendations(migrated_settings):
     migrated_settings.tmdb_read_access_token = SecretStr("tmdb-test")
     app = create_app(migrated_settings)
     calls = {"discover": [], "detail": [], "workflow": [], "rows": list(range(1, 17)), "fail": False,
-             "people": [{"id": 9, "name": "Director"}], "director_mismatch_ids": []}
+             "people": [{"id": 9, "name": "Director"}], "director_mismatch_ids": [],
+             "search": [], "search_results": {}, "extra_actor_ids": []}
 
     def handler(request):
         path = request.url.path
@@ -35,6 +38,17 @@ def recommendations(migrated_settings):
             return httpx.Response(200, json={"genres": [{"id": 18, "name": "剧情"}, {"id": 27, "name": "恐怖"}]})
         if path.endswith("/search/person"):
             return httpx.Response(200, json={"results": calls["people"]})
+        if path.endswith("/search/movie"):
+            params = dict(request.url.params)
+            calls["search"].append(params)
+            if calls["fail"]:
+                return httpx.Response(429, json={"status_message": "slow down"})
+            query = params["query"]
+            found = re.fullmatch(r"Film (\d+)", query)
+            data = calls["search_results"].get(query, [movie(int(found[1]), query)] if found and int(found[1]) in calls["rows"] else [])
+            if params.get("year"):
+                data = [item for item in data if item["release_date"].startswith(params["year"])]
+            return httpx.Response(200, json={"results": data, "total_pages": 1 if data else 0})
         if path.endswith("/discover/movie"):
             params = dict(request.url.params)
             calls["discover"].append(params)
@@ -46,6 +60,7 @@ def recommendations(migrated_settings):
             movie_id = int(path.rsplit("/", 1)[-1])
             calls["detail"].append(movie_id)
             data = movie(movie_id, f"Film {movie_id}")
+            data["credits"]["cast"].extend({"id": actor, "name": f"Actor {actor}"} for actor in calls["extra_actor_ids"])
             if movie_id in calls["director_mismatch_ids"]:
                 data["credits"]["crew"] = [{"id": 9, "name": "Director", "job": "Producer"}]
             return httpx.Response(200, json=data)
@@ -62,10 +77,17 @@ def prepared(client, criteria=None):
     response = client.post("/recommendations/contexts", json={"request_text": "轻松的日本电影，不要恐怖"})
     assert response.status_code == 200, response.text
     task_id = response.json()["task_id"]
+    legacy(client, task_id)
     response = client.post(f"/internal/recommendation-contexts/{task_id}/criteria", headers=AUTH,
                            json=criteria or {"excluded_genres": ["恐怖"], "moods": ["轻松"]})
     assert response.status_code == 200, response.text
     return task_id
+
+
+def legacy(client, task_id):
+    with Session(client.app.state.engine) as session:
+        session.get(RecommendationTask, task_id).strategy = "criteria"
+        session.commit()
 
 
 def search(client, task_id):
@@ -79,8 +101,8 @@ def test_task_preparation_and_tools_schema_expose_only_authenticated_read_tools(
     assert client.post("/internal/movie-tools/search", json={"task_id": task_id}).status_code == 401
     assert client.post(f"/internal/recommendation-contexts/{task_id}/criteria", json={}).status_code == 401
     schema = client.get("/recommendations/tools/openapi.json").json()
-    assert set(schema["paths"]) == {"/internal/movie-tools/search", "/internal/movie-tools/details"}
-    assert {entry["post"]["operationId"] for entry in schema["paths"].values()} == {"search_movies", "get_movie_details"}
+    assert set(schema["paths"]) == {"/internal/movie-tools/verify"}
+    assert {entry["post"]["operationId"] for entry in schema["paths"].values()} == {"verify_movies"}
     assert all(entry["post"]["security"] for entry in schema["paths"].values())
     assert client.get(f"/recommendations/tasks/{task_id}").json()["status"] == "prepared"
 
@@ -93,6 +115,7 @@ def test_criteria_are_fixed_and_invalid_ranges_or_genres_are_reported(recommenda
     assert client.post(endpoint, headers=AUTH, json={"moods": ["悲伤"]}).status_code == 409
     assert client.post(endpoint, headers=AUTH, json={"year_from": 2020, "year_to": 2000}).status_code == 422
     new_id = client.post("/recommendations/contexts", json={"request_text": "新任务"}).json()["task_id"]
+    legacy(client, new_id)
     assert client.post(f"/internal/recommendation-contexts/{new_id}/criteria", headers=AUTH,
                        json={"preferred_genres": ["随便编造的类型"]}).status_code == 422
 
@@ -231,9 +254,9 @@ def test_workflow_call_has_only_request_context_and_can_retry(recommendations):
         assert "画像" not in json.dumps(inputs, ensure_ascii=False)
         if attempt == 1:
             return httpx.Response(200, stream=ChunkedStream(sse({"event": "error", "message": "model busy"}).encode()))
-        await service.register_criteria(inputs["task_id"], RequestCriteria())
-        items = (await service.search(inputs["task_id"], 3))["items"]
-        result = {"movie_ids": [item["movie_id"] for item in items[:3]], "reasons": ["符合本次需求"] * 3}
+        verified = await MovieVerificationService(service.engine, service.catalog).verify(VerifyMoviesInput(
+            task_id=inputs["task_id"], constraints={}, movies=[{"title": f"Film {i}", "year": 2010} for i in range(1, 5)]))
+        result = {"movie_ids": verified.eligible_movie_ids[:3], "reasons": ["符合本次需求"] * 3}
         return httpx.Response(200, stream=ChunkedStream(sse({"event": "workflow_finished", "task_id": "dify-task",
             "workflow_run_id": "workflow-2", "data": {"status": "succeeded", "outputs": {"result": result}}}).encode()))
 
@@ -253,5 +276,6 @@ def test_workflow_call_has_only_request_context_and_can_retry(recommendations):
     state = client.get(f"/recommendations/tasks/{task_id}").json()
     assert state["status"] == "succeeded" and len(state["cards"]) == 3
     assert state["workflow_run_id"] == "workflow-2"
+    assert calls["discover"] == []
     assert client.post(f"/recommendations/tasks/{task_id}/run").status_code == 409
     client.portal.call(fake.aclose)

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.recommendation_models import RecommendationTask
 from app.recommendation_schemas import RecommendationSelection
 from dify_nodes.parse_recommendation_result import main
-from test_recommendations import AUTH, prepared, recommendations, search  # noqa: F401
+from test_recommendations import AUTH, legacy, prepared, recommendations, search  # noqa: F401
 
 
 def test_actual_empty_result_with_trailing_explanation_is_preserved():
@@ -47,6 +47,7 @@ def test_ambiguous_director_is_reported_instead_of_picking_someone(recommendatio
     client, _, calls = recommendations
     calls["people"] = [{"id": 9, "name": "Director"}, {"id": 10, "name": "Director"}]
     task_id = client.post("/recommendations/contexts", json={"request_text": "Director 的作品"}).json()["task_id"]
+    legacy(client, task_id)
     response = client.post(f"/internal/recommendation-contexts/{task_id}/criteria", headers=AUTH,
                            json={"directors": ["Director"]})
     assert response.status_code == 422

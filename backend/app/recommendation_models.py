@@ -19,6 +19,7 @@ class RecommendationTask(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
     batch_id: Mapped[str] = mapped_column(ForeignKey("recommendation_batches.id"), index=True)
     status: Mapped[str] = mapped_column(String)
+    strategy: Mapped[str] = mapped_column(String, default="ai_nomination", server_default="criteria")
     target_count: Mapped[int] = mapped_column(Integer)
     criteria: Mapped[dict | None] = mapped_column(JSON)
     filters: Mapped[dict | None] = mapped_column(JSON)
@@ -41,4 +42,16 @@ class BlockedMovie(Base):
     __tablename__ = "blocked_movies"
 
     catalog_id: Mapped[int] = mapped_column(ForeignKey("catalog_items.id"), primary_key=True)
+    created_at: Mapped[int] = mapped_column(Integer)
+
+
+class MovieVerification(Base):
+    __tablename__ = "movie_verifications"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    task_id: Mapped[str] = mapped_column(ForeignKey("recommendation_tasks.id"), index=True)
+    proposal: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String)
+    catalog_id: Mapped[int | None] = mapped_column(ForeignKey("catalog_items.id"))
+    reason: Mapped[str] = mapped_column(String)
     created_at: Mapped[int] = mapped_column(Integer)

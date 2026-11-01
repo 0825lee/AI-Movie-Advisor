@@ -31,3 +31,21 @@ def test_upgrade_keeps_existing_library_source_mapping_and_import_report(setting
         assert connection.scalar(text("SELECT catalog_item_id FROM source_mappings")) == 7
         assert connection.scalar(text("SELECT catalog_item_id FROM import_rows")) == 7
     engine.dispose()
+
+
+def test_nomination_migration_keeps_old_task_strategy_and_payload(settings):
+    config = migration_config(settings)
+    command.upgrade(config, "0010")
+    engine = create_database_engine(settings)
+    with engine.begin() as connection:
+        connection.execute(text("INSERT INTO recommendation_batches (id,request_text,shown_ids,created_at) VALUES ('old-batch','old request','[]',1)"))
+        connection.execute(text("""INSERT INTO recommendation_tasks
+            (id,batch_id,status,target_count,criteria,filters,result,created_at,updated_at)
+            VALUES ('old-task','old-batch','prepared',3,'{"directors":[]}','{}',NULL,1,1)"""))
+    command.upgrade(config, "head")
+    with engine.connect() as connection:
+        assert connection.execute(text("SELECT strategy,criteria,status FROM recommendation_tasks WHERE id='old-task'")).one() == (
+            "criteria", '{"directors":[]}', "prepared",
+        )
+        assert connection.execute(text("PRAGMA foreign_key_check")).all() == []
+    engine.dispose()

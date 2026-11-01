@@ -212,6 +212,7 @@ class CatalogService:
             directors=directors,
             creators=[c.model_dump() for c in parent.creators] if is_season else [{"id": p["id"], "name": p["name"]} for p in data.get("created_by", [])],
             cast=[{"id": p["id"], "name": p["name"]} for p in credits.get("cast", [])[:2]],
+            cast_ids=[p["id"] for p in credits.get("cast", [])],
             seasons=[dict(
                 season_number=season["season_number"], name=season["name"],
                 year=date_year(season.get("air_date")), episode_count=season["episode_count"],

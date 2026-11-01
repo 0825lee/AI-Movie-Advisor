@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.config import Settings
 from app.dify_client import DifyClient, DifyWorkflowError
 from app.recommendation_models import RecommendationBatch
+from app.recommendation_rules import AI_NOMINATION
 from app.recommendation_schemas import RecommendationSelection, RecommendationState
 from app.recommendation_service import RecommendationService, task_row
 
@@ -36,6 +37,8 @@ class RecommendationRunner:
             raise HTTPException(503, "请配置 MOVIE_INTERNAL_TOKEN，并在 Dify 工具中填写相同值。")
         with Session(self.service.engine) as session:
             task = task_row(session, task_id)
+            if task.strategy != AI_NOMINATION:
+                raise HTTPException(409, "旧任务采用旧检索策略，请重新提交原始需求创建新任务。")
             if task.status not in {"prepared", "failed"}:
                 raise HTTPException(409, "推荐正在执行或已经完成。")
             task.status, task.error, task.updated_at = "running", None, int(time.time())

@@ -10,41 +10,12 @@ from sqlalchemy.orm import Session
 
 from app.catalog_models import CatalogItem
 from app.catalog_schemas import CatalogRef
-from app.catalog_service import CatalogService, normalized_name, serialized, work_match_keys
-from app.library_models import UserItem
-from app.recommendation_models import BlockedMovie, RecommendationBatch, RecommendationCandidate, RecommendationTask
+from app.catalog_service import CatalogService, serialized, work_match_keys
+from app.recommendation_models import RecommendationBatch, RecommendationCandidate, RecommendationTask
+from app.recommendation_rules import AI_NOMINATION, constraint_mismatch, exclusions, is_excluded, open_task, person_ids, task_row
 from app.recommendation_schemas import RecommendationCard, RecommendationSelection, RecommendationState, RequestCriteria
 
 RELAXATIONS = ["完整条件", "放宽年代", "放宽时长", "放宽国家和语言", "放宽正向类型"]
-
-
-def exclusions(session: Session, shown_ids: list[int] = ()) -> tuple[set[int], set[str]]:
-    ids = set(session.scalars(select(UserItem.catalog_item_id).where(UserItem.status == "watched")))
-    ids.update(session.scalars(select(BlockedMovie.catalog_id)))
-    ids.update(shown_ids)
-    keys = set()
-    for work in session.scalars(select(CatalogItem).where(CatalogItem.id.in_(ids))):
-        keys.update(work.details.get("match_keys") or work_match_keys(work.details))
-    return ids, keys
-
-
-def is_excluded(work: CatalogItem, excluded: tuple[set[int], set[str]]) -> bool:
-    ids, keys = excluded
-    return work.id in ids or bool(keys.intersection(work.details.get("match_keys") or work_match_keys(work.details)))
-
-
-def task_row(session: Session, task_id: str) -> RecommendationTask:
-    task = session.get(RecommendationTask, task_id)
-    if task is None:
-        raise HTTPException(404, "推荐任务不存在。")
-    return task
-
-
-def open_task(session: Session, task_id: str) -> RecommendationTask:
-    task = task_row(session, task_id)
-    if task.status not in {"prepared", "running"}:
-        raise HTTPException(409, "推荐任务已结束，请创建新任务或重试。")
-    return task
 
 
 class RecommendationService:
@@ -59,7 +30,7 @@ class RecommendationService:
         with Session(self.engine) as session:
             session.add(RecommendationBatch(id=batch_id, request_text=request_text, shown_ids=[], created_at=now))
             session.flush()
-            session.add(RecommendationTask(id=task_id, batch_id=batch_id, status="prepared", target_count=3,
+            session.add(RecommendationTask(id=task_id, batch_id=batch_id, status="prepared", target_count=3, strategy=AI_NOMINATION,
                                            created_at=now, updated_at=now))
             session.commit()
         return task_id
@@ -73,6 +44,7 @@ class RecommendationService:
             cards = [RecommendationCard.model_validate(card) for card in task.result or []
                      if not is_excluded(session.get(CatalogItem, card["movie_id"]), excluded)]
             return RecommendationState(task_id=task.id, batch_id=task.batch_id, status=task.status,
+                                       strategy=task.strategy,
                                        request_text=batch.request_text, target_count=task.target_count,
                                        criteria=task.criteria, cards=cards,
                                        needs_refresh=task.status == "succeeded" and len(cards) != task.target_count,
@@ -82,6 +54,8 @@ class RecommendationService:
         payload = criteria.model_dump()
         with Session(self.engine) as session:
             task = open_task(session, task_id)
+            if task.strategy == AI_NOMINATION:
+                raise HTTPException(409, "新任务通过 verify_movies 登记条件，请更新 Dify 工作流。")
             if task.criteria is not None:
                 if RequestCriteria.model_validate(task.criteria).model_dump() != payload:
                     raise HTTPException(409, "本次任务条件已经固定，不能在检索过程中改写。")
@@ -97,17 +71,7 @@ class RecommendationService:
                 raise HTTPException(422, "请使用 TMDB 类型名称：" + "、".join(unknown))
             return list(dict.fromkeys(genre_ids[name] for name in names))
 
-        director_ids = []
-        for name in dict.fromkeys(criteria.directors):
-            response = await self.catalog.tmdb.get("/search/person", query=name, include_adult="false")
-            people = response["results"]
-            exact = [p for p in people if normalized_name(name) in {
-                normalized_name(p["name"]), normalized_name(p.get("original_name") or ""),
-            }]
-            matches = exact or people
-            if len(matches) != 1:
-                raise HTTPException(422, f"未能唯一确定导演“{name}”，请补充其完整姓名或原文姓名。")
-            director_ids.append(matches[0]["id"])
+        director_ids = await person_ids(self.catalog.tmdb, criteria.directors, "导演")
         filters = {"year_from": criteria.year_from, "year_to": criteria.year_to,
                    "runtime_min": criteria.runtime_min, "runtime_max": criteria.runtime_max,
                    "countries": criteria.countries, "languages": criteria.languages,
@@ -122,6 +86,8 @@ class RecommendationService:
         return {"task_id": task_id, "criteria": payload, "filters": filters}
 
     def candidates(self, session: Session, task: RecommendationTask) -> list[dict]:
+        if task.strategy == AI_NOMINATION and task.filters is None:
+            return []
         batch = session.get(RecommendationBatch, task.batch_id)
         excluded = exclusions(session, batch.shown_ids)
         rows = session.execute(select(RecommendationCandidate, CatalogItem).join(
@@ -138,6 +104,8 @@ class RecommendationService:
                     or any(genre["id"] in excluded_genres for genre in work.details["genres"])
                     or (director_ids and not director_ids.intersection(p["id"] for p in work.details["directors"]))):
                 continue
+            if task.strategy == AI_NOMINATION and constraint_mismatch(work, task.filters):
+                continue
             keys.update(movie_keys)
             result.append({"movie_id": work.id, "tmdb_id": work.tmdb_id, "title": work.title,
                            "original_title": work.original_title, "year": work.year,
@@ -150,6 +118,8 @@ class RecommendationService:
     async def search(self, task_id: str, target_count: int) -> dict:
         with Session(self.engine) as session:
             task = open_task(session, task_id)
+            if task.strategy == AI_NOMINATION:
+                raise HTTPException(409, "新任务只核实 Agent 提名，请调用 verify_movies。")
             if target_count != task.target_count:
                 raise HTTPException(422, "target_count 必须使用本次任务提供的值。")
             if task.criteria is None:
